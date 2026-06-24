@@ -14,6 +14,8 @@ import { ProjectNoteRepository } from '@/repositories/ProjectNoteRepository';
 import { ChatService } from '@/services/ChatService';
 import { ChatRepository } from '@/repositories/ChatRepository';
 import { getSseHub } from '@/lib/sse/hub';
+import { TodoService } from '@/services/TodoService';
+import { TodoRepository } from '@/repositories/TodoRepository';
 
 /**
  * Route Handler用に各Repository/Serviceを構築するファクトリ。
@@ -64,6 +66,17 @@ export function createChatService(): ChatService {
     new ProjectMemberRepository(db),
     new UserRepository(db),
     new NotificationService(new NotificationRepository(db)),
+    getSseHub()
+  );
+}
+
+export function createTodoService(): TodoService {
+  const db = getDb();
+  return new TodoService(
+    new TodoRepository(db),
+    new ProjectMemberRepository(db),
+    new NotificationService(new NotificationRepository(db)),
+    new ActivityLogService(new ActivityLogRepository(db)),
     getSseHub()
   );
 }

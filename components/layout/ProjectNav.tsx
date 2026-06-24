@@ -3,6 +3,7 @@ const NAV_ITEMS = [
   { href: '/board', label: '掲示板' },
   { href: '/notes', label: 'メモ' },
   { href: '/chat', label: 'チャット' },
+  { href: '/todos', label: 'ToDo' },
   { href: '/members', label: 'メンバー' },
   { href: '/activity', label: 'アクティビティ' },
   { href: '/settings', label: '設定' },
@@ -22,6 +23,7 @@ export function ProjectNav({
     | 'board'
     | 'notes'
     | 'chat'
+    | 'todos'
     | 'members'
     | 'activity'
     | 'settings';
@@ -31,6 +33,7 @@ export function ProjectNav({
     board: active === 'board',
     notes: active === 'notes',
     chat: active === 'chat',
+    todos: active === 'todos',
     members: active === 'members',
     activity: active === 'activity',
     settings: active === 'settings',
