@@ -37,7 +37,7 @@ export class Migrator {
       const sql = fs.readFileSync(fullPath, 'utf-8');
 
       this.db.transaction(() => {
-        this.db.execute(sql);
+        this.db.exec(sql);
         this.db.execute(
           `INSERT INTO schema_migrations (filename, applied_at) VALUES (@filename, @appliedAt)`,
           { filename: file, appliedAt: new Date().toISOString() }

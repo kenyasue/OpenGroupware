@@ -37,7 +37,7 @@ export class SqliteDatabase {
   }
 
   /**
-   * INSERT / UPDATE / DELETEを実行する
+   * INSERT / UPDATE / DELETEを実行する（単一プリペアドステートメント）
    */
   execute(sql: string, params?: SqlParams): ExecuteResult {
     const result = this.db.prepare(sql).run(params ?? {});
@@ -46,6 +46,14 @@ export class SqliteDatabase {
       changes: result.changes,
       lastInsertRowid: result.lastInsertRowid,
     };
+  }
+
+  /**
+   * 複数ステートメントを含むSQLを一括実行する（Migration用・パラメータバインド不可）。
+   * better-sqlite3の exec() を利用し、セミコロン区切りの複数文・コメントを処理する。
+   */
+  exec(sql: string): void {
+    this.db.exec(sql);
   }
 
   /**
