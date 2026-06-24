@@ -11,6 +11,9 @@ import { BoardService } from '@/services/BoardService';
 import { BoardRepository } from '@/repositories/BoardRepository';
 import { NoteService } from '@/services/NoteService';
 import { ProjectNoteRepository } from '@/repositories/ProjectNoteRepository';
+import { ChatService } from '@/services/ChatService';
+import { ChatRepository } from '@/repositories/ChatRepository';
+import { getSseHub } from '@/lib/sse/hub';
 
 /**
  * Route Handler用に各Repository/Serviceを構築するファクトリ。
@@ -51,6 +54,17 @@ export function createNoteService(): NoteService {
     new ProjectMemberRepository(db),
     new NotificationService(new NotificationRepository(db)),
     new ActivityLogService(new ActivityLogRepository(db))
+  );
+}
+
+export function createChatService(): ChatService {
+  const db = getDb();
+  return new ChatService(
+    new ChatRepository(db),
+    new ProjectMemberRepository(db),
+    new UserRepository(db),
+    new NotificationService(new NotificationRepository(db)),
+    getSseHub()
   );
 }
 
