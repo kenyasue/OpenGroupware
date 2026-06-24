@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import type { PublicUser } from '@/lib/auth/getCurrentUser';
+import { NotificationBadge } from '@/components/notifications/NotificationBadge';
 
 export function Header({ user }: { user: PublicUser }) {
   const router = useRouter();
@@ -21,6 +22,7 @@ export function Header({ user }: { user: PublicUser }) {
         <a href="/dashboard" className="text-gray-600 hover:underline">
           ダッシュボード
         </a>
+        <NotificationBadge />
         <a href="/profile" className="text-gray-600 hover:underline">
           {user.name} さん
         </a>

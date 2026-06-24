@@ -239,3 +239,56 @@ export interface SchemaMigration {
   filename: string;
   appliedAt: string;
 }
+
+// ===== 通知イベント =====
+
+export interface NotificationEventBase {
+  projectId: number | null;
+  title: string;
+  body: string | null;
+}
+
+/**
+ * 通知イベントの判別共用体。
+ * resolveTargets で type ごとに対象ユーザーを解決する。
+ */
+export type NotificationEvent =
+  | (NotificationEventBase & {
+      type: 'mention';
+      mentionedUserId: number;
+    })
+  | (NotificationEventBase & { type: 'todo_assigned'; assigneeId: number })
+  | (NotificationEventBase & { type: 'todo_due_soon'; assigneeId: number })
+  | (NotificationEventBase & {
+      type: 'meeting_invited';
+      memberIds: number[];
+    })
+  | (NotificationEventBase & {
+      type: 'board_commented';
+      threadAuthorId: number;
+    })
+  | (NotificationEventBase & { type: 'project_added'; addedUserId: number })
+  | (NotificationEventBase & {
+      type: 'file_shared';
+      projectMemberIds: number[];
+    })
+  | (NotificationEventBase & {
+      type: 'note_updated';
+      projectMemberIds: number[];
+    });
+
+/** SSE配信イベント(M8でSseHubが扱う)。M5ではbroadcasterの型として使用 */
+export type SseEvent =
+  | { type: 'notification.created'; data: { projectId: number | null } }
+  | { type: 'chat.message.created'; data: { projectId: number } }
+  | { type: 'chat.message.updated'; data: { projectId: number } }
+  | { type: 'chat.message.deleted'; data: { projectId: number; id: number } }
+  | { type: 'todo.updated'; data: { projectId: number } }
+  | { type: 'file.uploaded'; data: { projectId: number } }
+  | { type: 'meeting.created'; data: { projectId: number } }
+  | { type: 'note.updated'; data: { projectId: number } };
+
+/** SSE配信を行うコンポーネントの抽象(M8のSseHubが実装) */
+export interface SseBroadcaster {
+  broadcast(projectId: number, event: SseEvent): void;
+}
