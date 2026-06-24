@@ -277,16 +277,25 @@ export type NotificationEvent =
       projectMemberIds: number[];
     });
 
-/** SSE配信イベント(M8でSseHubが扱う)。M5ではbroadcasterの型として使用 */
+/** SSE配信イベント(M8でSseHubが扱う)。 */
 export type SseEvent =
-  | { type: 'notification.created'; data: { projectId: number | null } }
-  | { type: 'chat.message.created'; data: { projectId: number } }
-  | { type: 'chat.message.updated'; data: { projectId: number } }
-  | { type: 'chat.message.deleted'; data: { projectId: number; id: number } }
+  | {
+      type: 'chat.message.created';
+      data: { projectId: number; message: ChatMessage };
+    }
+  | {
+      type: 'chat.message.updated';
+      data: { projectId: number; message: ChatMessage };
+    }
+  | {
+      type: 'chat.message.deleted';
+      data: { projectId: number; id: number };
+    }
   | { type: 'todo.updated'; data: { projectId: number } }
   | { type: 'file.uploaded'; data: { projectId: number } }
   | { type: 'meeting.created'; data: { projectId: number } }
-  | { type: 'note.updated'; data: { projectId: number } };
+  | { type: 'note.updated'; data: { projectId: number } }
+  | { type: 'notification.created'; data: { projectId: number | null } };
 
 /** SSE配信を行うコンポーネントの抽象(M8のSseHubが実装) */
 export interface SseBroadcaster {
