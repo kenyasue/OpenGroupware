@@ -9,6 +9,8 @@ import { NotificationService } from '@/services/NotificationService';
 import { ActivityLogService } from '@/services/ActivityLogService';
 import { BoardService } from '@/services/BoardService';
 import { BoardRepository } from '@/repositories/BoardRepository';
+import { NoteService } from '@/services/NoteService';
+import { ProjectNoteRepository } from '@/repositories/ProjectNoteRepository';
 
 /**
  * Route Handler用に各Repository/Serviceを構築するファクトリ。
@@ -36,6 +38,16 @@ export function createBoardService(): BoardService {
   const db = getDb();
   return new BoardService(
     new BoardRepository(db),
+    new ProjectMemberRepository(db),
+    new NotificationService(new NotificationRepository(db)),
+    new ActivityLogService(new ActivityLogRepository(db))
+  );
+}
+
+export function createNoteService(): NoteService {
+  const db = getDb();
+  return new NoteService(
+    new ProjectNoteRepository(db),
     new ProjectMemberRepository(db),
     new NotificationService(new NotificationRepository(db)),
     new ActivityLogService(new ActivityLogRepository(db))
