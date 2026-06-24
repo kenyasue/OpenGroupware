@@ -11,6 +11,14 @@ export default defineConfig({
       'repositories/**/*.{test,spec}.{ts,tsx}',
       'services/**/*.{test,spec}.{ts,tsx}',
     ],
+    exclude: [
+      'tests/e2e/**',
+      'node_modules/**',
+      'dist/**',
+      '.next/**',
+      '**/node_modules/**',
+    ],
+    setupFiles: ['tests/setup.ts'],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],

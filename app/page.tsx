@@ -1,10 +1,12 @@
+'use client';
+
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+
 export default function Home() {
-  return (
-    <main className="flex min-h-screen flex-col items-center justify-center p-8">
-      <h1 className="text-3xl font-bold">シンプルグループウェア</h1>
-      <p className="mt-4 text-gray-600">
-        プロジェクト単位で情報共有・タスク管理を行えるチームコラボレーションツール
-      </p>
-    </main>
-  );
+  const router = useRouter();
+  useEffect(() => {
+    router.replace('/dashboard');
+  }, [router]);
+  return null;
 }
