@@ -12,3 +12,7 @@ node_modules/
 
 # ビルド成果物
 dist/
+.next/
+
+# Next.js auto-generated
+next-env.d.ts
