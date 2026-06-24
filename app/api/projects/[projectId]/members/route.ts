@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth/getCurrentUser';
 import { createProjectService, createUserRepository } from '@/lib/api/services';
+import { validateProjectMemberRole } from '@/lib/validators/projectValidator';
 import { UnauthorizedError, NotFoundError } from '@/lib/errors';
 import { handleApiError, jsonError } from '@/lib/api/handleError';
-import type { ProjectMemberRole } from '@/lib/types';
 
 export const runtime = 'nodejs';
 
@@ -44,9 +44,9 @@ export async function POST(
   }
 
   const email = String(body.email ?? '');
-  const role = (
+  const role = validateProjectMemberRole(
     typeof body.role === 'string' ? body.role : 'member'
-  ) as ProjectMemberRole;
+  );
 
   // メールアドレスからユーザーを解決する
   const targetUser = createUserRepository().findByEmail(email);

@@ -1,5 +1,5 @@
 import { ValidationError } from '@/lib/errors';
-import type { ProjectStatus } from '@/lib/types';
+import type { ProjectMemberRole, ProjectStatus } from '@/lib/types';
 
 const MAX_NAME_LENGTH = 200;
 const MAX_DESCRIPTION_LENGTH = 2000;
@@ -9,6 +9,7 @@ const VALID_STATUSES: ProjectStatus[] = [
   'completed',
   'archived',
 ];
+const VALID_MEMBER_ROLES: ProjectMemberRole[] = ['admin', 'member', 'guest'];
 
 export interface ProjectCreateInput {
   name: string;
@@ -63,4 +64,11 @@ export function validateProjectUpdate(input: ProjectUpdateInput): void {
   if (input.status !== undefined && !VALID_STATUSES.includes(input.status)) {
     throw new ValidationError('無効なステータスです', 'status');
   }
+}
+
+export function validateProjectMemberRole(role: string): ProjectMemberRole {
+  if (!VALID_MEMBER_ROLES.includes(role as ProjectMemberRole)) {
+    throw new ValidationError('無効なメンバーロールです', 'role');
+  }
+  return role as ProjectMemberRole;
 }

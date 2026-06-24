@@ -22,11 +22,14 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],
+      include: ['repositories/**', 'services/**'],
       exclude: [
         'node_modules/**',
         'dist/**',
         '.next/**',
         '.steering/**',
+        'app/**',
+        'components/**',
         '**/*.config.{ts,js,mjs}',
         '**/types/**',
         'tests/**',

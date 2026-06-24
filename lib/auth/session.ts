@@ -50,8 +50,15 @@ export function verifySessionToken(token: string): number | null {
   try {
     const payload = JSON.parse(
       Buffer.from(encoded, 'base64url').toString('utf-8')
-    ) as { uid?: unknown };
+    ) as { uid?: unknown; iat?: unknown };
     if (typeof payload.uid !== 'number') return null;
+    // サーバ側でも有効期限を検証する(クッキーのmaxAgeだけに依存しない)
+    if (
+      typeof payload.iat !== 'number' ||
+      Date.now() - payload.iat > SESSION_MAX_AGE_SECONDS * 1000
+    ) {
+      return null;
+    }
     return payload.uid;
   } catch {
     return null;

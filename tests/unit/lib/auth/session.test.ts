@@ -1,5 +1,17 @@
 import { describe, it, expect } from 'vitest';
+import crypto from 'node:crypto';
 import { createSessionToken, verifySessionToken } from '@/lib/auth/session';
+
+function forgeToken(uid: number, iat: number): string {
+  const secret = process.env.SESSION_SECRET!;
+  const payload = JSON.stringify({ uid, iat });
+  const encoded = Buffer.from(payload, 'utf-8').toString('base64url');
+  const signature = crypto
+    .createHmac('sha256', secret)
+    .update(encoded)
+    .digest('base64url');
+  return `${encoded}.${signature}`;
+}
 
 describe('session token', () => {
   it('round-trips a user id through create and verify', () => {
@@ -32,6 +44,15 @@ describe('session token', () => {
     expect(verifySessionToken('not-a-valid-token')).toBeNull();
     expect(verifySessionToken('only.one.too.many')).toBeNull();
     expect(verifySessionToken('')).toBeNull();
+  });
+
+  it('returns null for an expired token (stale iat)', () => {
+    const eightDaysAgo = Date.now() - 8 * 24 * 60 * 60 * 1000;
+    expect(verifySessionToken(forgeToken(42, eightDaysAgo))).toBeNull();
+  });
+
+  it('accepts a freshly-issued token', () => {
+    expect(verifySessionToken(forgeToken(42, Date.now()))).toBe(42);
   });
 
   it('returns null when the payload uid is not a number', () => {
