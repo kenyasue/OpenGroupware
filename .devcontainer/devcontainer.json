@@ -1,0 +1,11 @@
+{
+  "name": "opencode-spec-driven-boilerplate",
+  "image": "mcr.microsoft.com/devcontainers/base:bookworm",
+  "workspaceFolder": "/workspaces/opencode-spec-driven-boilerplate",
+  "features": {
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "lts"
+    }
+  },
+  "postCreateCommand": "npm install && curl -fsSL https://opencode.ai/install | bash && ln -sf $HOME/.opencode/bin/opencode /usr/local/bin/opencode"
+}
