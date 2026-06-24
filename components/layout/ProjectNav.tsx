@@ -1,5 +1,6 @@
 const NAV_ITEMS = [
   { href: '', label: '概要' },
+  { href: '/board', label: '掲示板' },
   { href: '/members', label: 'メンバー' },
   { href: '/activity', label: 'アクティビティ' },
   { href: '/settings', label: '設定' },
@@ -14,10 +15,11 @@ export function ProjectNav({
   active,
 }: {
   projectId: number;
-  active: 'overview' | 'members' | 'activity' | 'settings';
+  active: 'overview' | 'board' | 'members' | 'activity' | 'settings';
 }) {
   const activeMap: Record<string, boolean> = {
     overview: active === 'overview',
+    board: active === 'board',
     members: active === 'members',
     activity: active === 'activity',
     settings: active === 'settings',

@@ -7,6 +7,8 @@ import { UserRepository } from '@/repositories/UserRepository';
 import { ProjectService } from '@/services/ProjectService';
 import { NotificationService } from '@/services/NotificationService';
 import { ActivityLogService } from '@/services/ActivityLogService';
+import { BoardService } from '@/services/BoardService';
+import { BoardRepository } from '@/repositories/BoardRepository';
 
 /**
  * Route Handler用に各Repository/Serviceを構築するファクトリ。
@@ -28,6 +30,16 @@ export function createNotificationService(): NotificationService {
 
 export function createActivityLogService(): ActivityLogService {
   return new ActivityLogService(new ActivityLogRepository(getDb()));
+}
+
+export function createBoardService(): BoardService {
+  const db = getDb();
+  return new BoardService(
+    new BoardRepository(db),
+    new ProjectMemberRepository(db),
+    new NotificationService(new NotificationRepository(db)),
+    new ActivityLogService(new ActivityLogRepository(db))
+  );
 }
 
 export function createUserRepository(): UserRepository {
