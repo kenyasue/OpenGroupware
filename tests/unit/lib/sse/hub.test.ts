@@ -44,7 +44,10 @@ describe('SseHub', () => {
 
     hub.broadcast(1, {
       type: 'chat.message.created',
-      data: { projectId: 1, message: { id: 1 } as never },
+      data: {
+        projectId: 1,
+        message: { id: 1, attachments: [] } as never,
+      },
     });
 
     expect(a1.received).toHaveLength(1);

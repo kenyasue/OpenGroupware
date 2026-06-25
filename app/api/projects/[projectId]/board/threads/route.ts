@@ -42,6 +42,11 @@ export async function POST(
 
   const service = createBoardService();
   try {
+    const fileIds = Array.isArray(body.fileIds)
+      ? body.fileIds
+          .map((n) => Number(n))
+          .filter((n) => Number.isFinite(n) && n > 0)
+      : [];
     const thread = service.createThread(user.id, Number(projectId), {
       title: String(body.title ?? ''),
       bodyMd: String(body.bodyMd ?? ''),
@@ -49,6 +54,7 @@ export async function POST(
         typeof body.category === 'string'
           ? (body.category as never)
           : undefined,
+      fileIds,
     });
     return NextResponse.json({ thread }, { status: 201 });
   } catch (error) {

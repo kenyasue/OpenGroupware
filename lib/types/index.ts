@@ -141,8 +141,45 @@ export interface FileAsset {
   mimeType: string;
   size: number;
   path: string;
+  source: FileAssetSource;
   createdAt: string;
   deletedAt: string | null;
+}
+
+/** ファイルの来源。library=Files一覧公開、attachment=添付専用(一覧に出さない)。 */
+export type FileAssetSource = 'library' | 'attachment';
+
+/** 添付ファイルの関連付け対象。 */
+export type AttachmentTargetType =
+  | 'chat_message'
+  | 'board_thread'
+  | 'board_comment';
+
+/** attachments エンティティ。 */
+export interface Attachment {
+  id: number;
+  projectId: number;
+  fileId: number;
+  targetType: AttachmentTargetType;
+  targetId: number;
+  createdAt: string;
+  deletedAt: string | null;
+}
+
+/** UI表示用の添付ファイルビュー(ダウンロードURLは fileId から組み立てる)。 */
+export interface AttachmentView {
+  id: number;
+  fileId: number;
+  targetType: AttachmentTargetType;
+  targetId: number;
+  originalName: string;
+  mimeType: string;
+  size: number;
+}
+
+/** チャットメッセージ + 添付ファイル。 */
+export interface ChatMessageWithAttachments extends ChatMessage {
+  attachments: AttachmentView[];
 }
 
 export interface ProjectNote {
@@ -281,7 +318,10 @@ export type NotificationEvent =
 export type SseEvent =
   | {
       type: 'chat.message.created';
-      data: { projectId: number; message: ChatMessage };
+      data: {
+        projectId: number;
+        message: ChatMessageWithAttachments;
+      };
     }
   | {
       type: 'chat.message.updated';

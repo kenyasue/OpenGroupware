@@ -1,5 +1,5 @@
 import type { SqliteDatabase } from '@/lib/db/sqlite';
-import type { FileAsset } from '@/lib/types';
+import type { FileAsset, FileAssetSource } from '@/lib/types';
 
 const DEFAULT_PAGE_SIZE = 20;
 
@@ -17,6 +17,7 @@ interface FileAssetRow {
   mime_type: string;
   size: number;
   path: string;
+  source: string;
   created_at: string;
   deleted_at: string | null;
 }
@@ -31,6 +32,7 @@ function mapFile(row: FileAssetRow): FileAsset {
     mimeType: row.mime_type,
     size: row.size,
     path: row.path,
+    source: row.source as FileAssetSource,
     createdAt: row.created_at,
     deletedAt: row.deleted_at,
   };
@@ -44,6 +46,7 @@ export interface CreateFileInput {
   mimeType: string;
   size: number;
   path: string;
+  source?: FileAssetSource;
 }
 
 export class FileRepository {
@@ -55,15 +58,17 @@ export class FileRepository {
     pageSize: number = DEFAULT_PAGE_SIZE
   ): Paginated<FileAsset> {
     const offset = (page - 1) * pageSize;
+    // 添付専用ファイル(source='attachment')はFiles一覧に出さない
     const items = this.db.query<FileAssetRow>(
       `SELECT * FROM file_assets
-       WHERE project_id = @projectId AND deleted_at IS NULL
+       WHERE project_id = @projectId AND deleted_at IS NULL AND source = 'library'
        ORDER BY created_at DESC, id DESC
        LIMIT @pageSize OFFSET @offset`,
       { projectId, pageSize, offset }
     );
     const total = this.db.get<{ count: number }>(
-      'SELECT COUNT(*) AS count FROM file_assets WHERE project_id = @projectId AND deleted_at IS NULL',
+      `SELECT COUNT(*) AS count FROM file_assets
+       WHERE project_id = @projectId AND deleted_at IS NULL AND source = 'library'`,
       { projectId }
     );
     return { items: items.map(mapFile), total: total?.count ?? 0 };
@@ -79,9 +84,10 @@ export class FileRepository {
 
   create(input: CreateFileInput): FileAsset {
     const now = new Date().toISOString();
+    const source = input.source ?? 'library';
     const result = this.db.execute(
-      `INSERT INTO file_assets (project_id, uploader_id, filename, original_name, mime_type, size, path, created_at, deleted_at)
-       VALUES (@projectId, @uploaderId, @filename, @originalName, @mimeType, @size, @path, @createdAt, NULL)`,
+      `INSERT INTO file_assets (project_id, uploader_id, filename, original_name, mime_type, size, path, source, created_at, deleted_at)
+       VALUES (@projectId, @uploaderId, @filename, @originalName, @mimeType, @size, @path, @source, @createdAt, NULL)`,
       {
         projectId: input.projectId,
         uploaderId: input.uploaderId,
@@ -90,6 +96,7 @@ export class FileRepository {
         mimeType: input.mimeType,
         size: input.size,
         path: input.path,
+        source,
         createdAt: now,
       }
     );

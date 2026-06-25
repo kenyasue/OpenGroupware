@@ -42,10 +42,16 @@ export async function POST(
 
   const service = createChatService();
   try {
+    const fileIds = Array.isArray(body.fileIds)
+      ? body.fileIds
+          .map((n) => Number(n))
+          .filter((n) => Number.isFinite(n) && n > 0)
+      : [];
     const message = service.sendMessage(
       user.id,
       Number(projectId),
-      String(body.body ?? '')
+      String(body.body ?? ''),
+      fileIds
     );
     return NextResponse.json({ message }, { status: 201 });
   } catch (error) {

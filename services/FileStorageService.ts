@@ -7,7 +7,7 @@ import { NotificationService } from '@/services/NotificationService';
 import { ActivityLogService } from '@/services/ActivityLogService';
 import { SseHub } from '@/lib/sse/hub';
 import { ForbiddenError, NotFoundError, ValidationError } from '@/lib/errors';
-import type { FileAsset } from '@/lib/types';
+import type { FileAsset, FileAssetSource } from '@/lib/types';
 
 const ALLOWED_MIME_PREFIXES = [
   'image/',
@@ -62,33 +62,7 @@ export class FileStorageService {
     projectId: number,
     input: UploadFileInput
   ): FileAsset {
-    this.requireMember(projectId, actorId);
-    if (!input.data || input.data.length === 0) {
-      throw new ValidationError('ファイルが空です', 'file');
-    }
-    if (!this.isAllowedMime(input.mimeType)) {
-      throw new ValidationError('許可されていないファイル形式です', 'mimeType');
-    }
-
-    const ext =
-      this.sanitizeExt(input.originalName) ??
-      EXT_BY_MIME[input.mimeType] ??
-      'bin';
-    const filename = `${crypto.randomUUID()}.${ext}`;
-    const dir = path.join(this.uploadsDir, String(projectId));
-    fs.mkdirSync(dir, { recursive: true });
-    const filePath = path.join(dir, filename);
-    fs.writeFileSync(filePath, input.data);
-
-    const fileAsset = this.fileRepository.create({
-      projectId,
-      uploaderId: actorId,
-      filename,
-      originalName: this.sanitizeName(input.originalName) || 'file',
-      mimeType: input.mimeType,
-      size: input.data.length,
-      path: filePath,
-    });
+    const fileAsset = this.persistFile(actorId, projectId, input, 'library');
 
     const memberIds = this.projectMemberRepository
       .findByProject(projectId)
@@ -115,6 +89,58 @@ export class FileStorageService {
       data: { projectId },
     });
     return fileAsset;
+  }
+
+  /**
+   * チャット/掲示板の添付ファイル用アップロード。
+   * file_shared 通知・file.uploaded SSE・file_uploaded アクティビティを行わず、
+   * source='attachment' で保存する(Files一覧には出さない)。
+   */
+  uploadForAttachment(
+    actorId: number,
+    projectId: number,
+    input: UploadFileInput
+  ): FileAsset {
+    return this.persistFile(actorId, projectId, input, 'attachment');
+  }
+
+  /**
+   * 共通のファイル保存処理。権限チェック・MIMEチェック・FS保存・file_assets登録を行う。
+   */
+  private persistFile(
+    actorId: number,
+    projectId: number,
+    input: UploadFileInput,
+    source: FileAssetSource
+  ): FileAsset {
+    this.requireMember(projectId, actorId);
+    if (!input.data || input.data.length === 0) {
+      throw new ValidationError('ファイルが空です', 'file');
+    }
+    if (!this.isAllowedMime(input.mimeType)) {
+      throw new ValidationError('許可されていないファイル形式です', 'mimeType');
+    }
+
+    const ext =
+      this.sanitizeExt(input.originalName) ??
+      EXT_BY_MIME[input.mimeType] ??
+      'bin';
+    const filename = `${crypto.randomUUID()}.${ext}`;
+    const dir = path.join(this.uploadsDir, String(projectId));
+    fs.mkdirSync(dir, { recursive: true });
+    const filePath = path.join(dir, filename);
+    fs.writeFileSync(filePath, input.data);
+
+    return this.fileRepository.create({
+      projectId,
+      uploaderId: actorId,
+      filename,
+      originalName: this.sanitizeName(input.originalName) || 'file',
+      mimeType: input.mimeType,
+      size: input.data.length,
+      path: filePath,
+      source,
+    });
   }
 
   listFiles(actorId: number, projectId: number, page: number = 1) {

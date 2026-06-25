@@ -6,8 +6,15 @@ import type { Paginated } from '@/repositories/BoardRepository';
 import { ProjectMemberRepository } from '@/repositories/ProjectMemberRepository';
 import { NotificationService } from '@/services/NotificationService';
 import { ActivityLogService } from '@/services/ActivityLogService';
+import { AttachmentService } from '@/services/AttachmentService';
+import type { SqliteDatabase } from '@/lib/db/sqlite';
 import { ForbiddenError, NotFoundError, ValidationError } from '@/lib/errors';
-import type { BoardCategory, BoardComment, BoardThread } from '@/lib/types';
+import type {
+  AttachmentView,
+  BoardCategory,
+  BoardComment,
+  BoardThread,
+} from '@/lib/types';
 
 const VALID_CATEGORIES: BoardCategory[] = [
   'notice',
@@ -23,6 +30,7 @@ export interface CreateThreadInput {
   title: string;
   bodyMd: string;
   category?: BoardCategory;
+  fileIds?: number[];
 }
 
 export interface UpdateThreadInput {
@@ -36,14 +44,17 @@ export interface UpdateThreadInput {
 /**
  * 掲示板の業務ロジックを担うService。
  * 権限チェック(プロジェクト参加者のみ)、スレッド/コメントCRUD、
- * コメント追加時の通知(board_commented)とアクティビティログ記録を行う。
+ * コメント追加時の通知(board_commented)、アクティビティログ記録、
+ * 添付ファイル紐付けを行う。
  */
 export class BoardService {
   constructor(
     private readonly boardRepository: BoardRepository,
     private readonly projectMemberRepository: ProjectMemberRepository,
     private readonly notificationService: NotificationService,
-    private readonly activityLogService: ActivityLogService
+    private readonly activityLogService: ActivityLogService,
+    private readonly attachmentService: AttachmentService,
+    private readonly db: SqliteDatabase
   ) {}
 
   listThreads(
@@ -69,12 +80,24 @@ export class BoardService {
   ): BoardThread {
     this.requireMember(projectId, actorId);
     this.validateThreadInput(input.title, input.bodyMd, input.category);
-    const thread = this.boardRepository.createThread({
-      projectId,
-      title: input.title,
-      bodyMd: input.bodyMd,
-      authorId: actorId,
-      category: input.category ?? null,
+    const thread = this.db.transaction(() => {
+      const t = this.boardRepository.createThread({
+        projectId,
+        title: input.title,
+        bodyMd: input.bodyMd,
+        authorId: actorId,
+        category: input.category ?? null,
+      });
+      if (input.fileIds && input.fileIds.length > 0) {
+        this.attachmentService.attach(
+          actorId,
+          projectId,
+          'board_thread',
+          t.id,
+          input.fileIds
+        );
+      }
+      return t;
     });
     this.activityLogService.logActivity({
       projectId,
@@ -118,7 +141,10 @@ export class BoardService {
   deleteThread(actorId: number, threadId: number): void {
     const thread = this.getThread(actorId, threadId);
     this.requireAuthorOrAdmin(thread.projectId, actorId, thread.authorId);
-    this.boardRepository.deleteThread(threadId);
+    this.db.transaction(() => {
+      this.attachmentService.detach('board_thread', threadId);
+      this.boardRepository.deleteThread(threadId);
+    });
   }
 
   listComments(
@@ -133,16 +159,29 @@ export class BoardService {
   createComment(
     actorId: number,
     threadId: number,
-    bodyMd: string
+    bodyMd: string,
+    fileIds?: number[]
   ): BoardComment {
     const thread = this.getThread(actorId, threadId);
     if (!bodyMd.trim()) {
       throw new ValidationError('コメント本文を入力してください', 'bodyMd');
     }
-    const comment = this.boardRepository.createComment({
-      threadId: thread.id,
-      authorId: actorId,
-      bodyMd,
+    const comment = this.db.transaction(() => {
+      const c = this.boardRepository.createComment({
+        threadId: thread.id,
+        authorId: actorId,
+        bodyMd,
+      });
+      if (fileIds && fileIds.length > 0) {
+        this.attachmentService.attach(
+          actorId,
+          thread.projectId,
+          'board_comment',
+          c.id,
+          fileIds
+        );
+      }
+      return c;
     });
     // スレッド投稿者へ通知(自分自身へのコメントは通知しない)
     if (thread.authorId !== actorId) {
@@ -188,7 +227,29 @@ export class BoardService {
     if (!comment) throw new NotFoundError('BoardComment', commentId);
     const thread = this.getThread(actorId, comment.threadId);
     this.requireAuthorOrAdmin(thread.projectId, actorId, comment.authorId);
-    this.boardRepository.deleteComment(commentId);
+    this.db.transaction(() => {
+      this.attachmentService.detach('board_comment', commentId);
+      this.boardRepository.deleteComment(commentId);
+    });
+  }
+
+  /**
+   * スレッド本文と指定コメントの添付ファイルを一括取得する。
+   * メンバーシップは getThread で検証する。
+   */
+  getAttachments(
+    actorId: number,
+    threadId: number,
+    commentIds: number[]
+  ): { thread: AttachmentView[]; comments: AttachmentView[] } {
+    const thread = this.getThread(actorId, threadId);
+    return {
+      thread: this.attachmentService.listViews('board_thread', thread.id),
+      comments: this.attachmentService.listViewsBatch(
+        'board_comment',
+        commentIds
+      ),
+    };
   }
 
   private requireMember(projectId: number, actorId: number): void {

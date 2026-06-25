@@ -85,4 +85,37 @@ describe('FileRepository', () => {
     expect(repo.findFilesByProject(projectId, 1, 2).items).toHaveLength(2);
     expect(repo.findFilesByProject(projectId, 1, 2).total).toBe(5);
   });
+
+  it('excludes attachment-source files from the library list but findFileById still returns them', () => {
+    createFile('library-file');
+    repo.create({
+      projectId,
+      uploaderId: userId,
+      filename: 'att.bin',
+      originalName: 'attachment-file',
+      mimeType: 'image/png',
+      size: 1,
+      path: '/tmp/att.bin',
+      source: 'attachment',
+    });
+    const list = repo.findFilesByProject(projectId);
+    expect(list.total).toBe(1);
+    expect(list.items[0].originalName).toBe('library-file');
+    // 添付ファイルも findFileById では取得可能(ダウンロード用)
+    const att = repo.findFilesByProject(projectId, 1, 100).items;
+    expect(att).toHaveLength(1);
+  });
+
+  it('defaults source to library when not specified', () => {
+    const f = repo.create({
+      projectId,
+      uploaderId: userId,
+      filename: 'd.bin',
+      originalName: 'd',
+      mimeType: 'text/plain',
+      size: 1,
+      path: '/tmp/d.bin',
+    });
+    expect(f.source).toBe('library');
+  });
 });

@@ -5,8 +5,11 @@ import { UserRepository } from '@/repositories/UserRepository';
 import { ProjectRepository } from '@/repositories/ProjectRepository';
 import { ProjectMemberRepository } from '@/repositories/ProjectMemberRepository';
 import { ChatRepository } from '@/repositories/ChatRepository';
+import { FileRepository } from '@/repositories/FileRepository';
+import { AttachmentRepository } from '@/repositories/AttachmentRepository';
 import { NotificationRepository } from '@/repositories/NotificationRepository';
 import { NotificationService } from '@/services/NotificationService';
+import { AttachmentService } from '@/services/AttachmentService';
 import { ChatService } from '@/services/ChatService';
 import { SseHub, type SseClient } from '@/lib/sse/hub';
 import { ForbiddenError, NotFoundError, ValidationError } from '@/lib/errors';
@@ -56,7 +59,13 @@ describe('ChatService', () => {
       members,
       users,
       new NotificationService(new NotificationRepository(db)),
-      hub
+      hub,
+      new AttachmentService(
+        new AttachmentRepository(db),
+        new FileRepository(db),
+        members
+      ),
+      db
     );
   });
 
@@ -134,5 +143,103 @@ describe('ChatService', () => {
 
   it('throws NotFoundError for a non-existent message', () => {
     expect(() => service.deleteMessage(authorId, 99999)).toThrow(NotFoundError);
+  });
+
+  it('sendMessage with fileIds attaches files and broadcasts them', () => {
+    const client = makeClient();
+    hub.addClient(projectId, client);
+    const fileRepo = new FileRepository(db);
+    const f1 = fileRepo.create({
+      projectId,
+      uploaderId: authorId,
+      filename: 'a.png',
+      originalName: 'a.png',
+      mimeType: 'image/png',
+      size: 1,
+      path: '/tmp/a.png',
+      source: 'attachment',
+    });
+    const f2 = fileRepo.create({
+      projectId,
+      uploaderId: authorId,
+      filename: 'b.png',
+      originalName: 'b.png',
+      mimeType: 'image/png',
+      size: 1,
+      path: '/tmp/b.png',
+      source: 'attachment',
+    });
+
+    const message = service.sendMessage(authorId, projectId, 'see this', [
+      f1.id,
+      f2.id,
+    ]);
+
+    expect(message.attachments).toHaveLength(2);
+    expect(client.received[0]).toContain('chat.message.created');
+    expect(client.received[0]).toContain('"attachments"');
+  });
+
+  it('getHistory returns messages with their attachments', () => {
+    const fileRepo = new FileRepository(db);
+    const f1 = fileRepo.create({
+      projectId,
+      uploaderId: authorId,
+      filename: 'a.png',
+      originalName: 'a.png',
+      mimeType: 'image/png',
+      size: 1,
+      path: '/tmp/a.png',
+      source: 'attachment',
+    });
+    service.sendMessage(authorId, projectId, 'with file', [f1.id]);
+    service.sendMessage(authorId, projectId, 'no file');
+
+    const history = service.getHistory(authorId, projectId);
+    const withFile = history.items.find((m) => m.body === 'with file');
+    const noFile = history.items.find((m) => m.body === 'no file');
+    expect(withFile?.attachments).toHaveLength(1);
+    expect(noFile?.attachments).toEqual([]);
+  });
+
+  it('deleteMessage soft-deletes its attachments', () => {
+    const fileRepo = new FileRepository(db);
+    const f1 = fileRepo.create({
+      projectId,
+      uploaderId: authorId,
+      filename: 'a.png',
+      originalName: 'a.png',
+      mimeType: 'image/png',
+      size: 1,
+      path: '/tmp/a.png',
+      source: 'attachment',
+    });
+    const m = service.sendMessage(authorId, projectId, 'x', [f1.id]);
+    expect(m.attachments).toHaveLength(1);
+    service.deleteMessage(authorId, m.id);
+    const history = service.getHistory(authorId, projectId);
+    // 削除されたメッセージは履歴に無く、添付も残らない
+    expect(history.items.find((msg) => msg.id === m.id)).toBeUndefined();
+  });
+
+  it('editMessage preserves attachments in history (regression)', () => {
+    const fileRepo = new FileRepository(db);
+    const f1 = fileRepo.create({
+      projectId,
+      uploaderId: authorId,
+      filename: 'a.png',
+      originalName: 'a.png',
+      mimeType: 'image/png',
+      size: 1,
+      path: '/tmp/a.png',
+      source: 'attachment',
+    });
+    const m = service.sendMessage(authorId, projectId, 'orig', [f1.id]);
+    service.editMessage(authorId, m.id, 'edited');
+    const history = service.getHistory(authorId, projectId);
+    const edited = history.items.find((msg) => msg.id === m.id);
+    expect(edited?.body).toBe('edited');
+    // 編集後も添付は履歴に残る
+    expect(edited?.attachments).toHaveLength(1);
   });
 });

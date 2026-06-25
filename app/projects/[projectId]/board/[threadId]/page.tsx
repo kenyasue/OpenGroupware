@@ -5,6 +5,8 @@ import { Header } from '@/components/layout/Header';
 import { ProjectNav } from '@/components/layout/ProjectNav';
 import { MarkdownBody } from '@/components/board/MarkdownBody';
 import { CommentForm } from '@/components/board/CommentForm';
+import { AttachmentList } from '@/components/files/AttachmentList';
+import type { AttachmentView } from '@/lib/types';
 import { ForbiddenError, NotFoundError } from '@/lib/errors';
 
 export const dynamic = 'force-dynamic';
@@ -21,14 +23,32 @@ export default async function ThreadDetailPage({
   const boardService = createBoardService();
   let thread;
   let comments;
+  let attachments: { thread: AttachmentView[]; comments: AttachmentView[] };
   try {
     thread = boardService.getThread(user.id, Number(threadId));
     comments = boardService.listComments(user.id, Number(threadId));
+    attachments = boardService.getAttachments(
+      user.id,
+      thread.id,
+      comments.items.map((c) => c.id)
+    );
   } catch (error) {
     if (error instanceof ForbiddenError || error instanceof NotFoundError) {
       redirect(`/projects/${projectId}/board`);
     }
     throw error;
+  }
+
+  // コメントIDごとに添付をグループ化
+  const commentAttachments = new Map(
+    attachments.comments.map((a) => [
+      a.targetId,
+      [] as typeof attachments.comments,
+    ])
+  );
+  for (const a of attachments.comments) {
+    const list = commentAttachments.get(a.targetId);
+    if (list) list.push(a);
   }
 
   return (
@@ -54,6 +74,14 @@ export default async function ThreadDetailPage({
           <div className="mt-4">
             <MarkdownBody bodyMd={thread.bodyMd} />
           </div>
+          {attachments.thread.length > 0 && (
+            <div className="mt-4">
+              <p className="mb-1 text-xs font-medium text-gray-500">
+                添付ファイル
+              </p>
+              <AttachmentList attachments={attachments.thread} />
+            </div>
+          )}
           <p className="mt-4 text-xs text-gray-400">
             投稿: {thread.createdAt} / 更新: {thread.updatedAt}
           </p>
@@ -67,6 +95,14 @@ export default async function ThreadDetailPage({
               className="rounded-lg border bg-white p-4 shadow-sm"
             >
               <MarkdownBody bodyMd={comment.bodyMd} />
+              {commentAttachments.has(comment.id) &&
+                commentAttachments.get(comment.id)!.length > 0 && (
+                  <div className="mt-2">
+                    <AttachmentList
+                      attachments={commentAttachments.get(comment.id)!}
+                    />
+                  </div>
+                )}
               <p className="mt-2 text-xs text-gray-400">{comment.createdAt}</p>
             </div>
           ))}
