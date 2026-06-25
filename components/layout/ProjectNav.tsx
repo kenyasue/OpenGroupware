@@ -4,6 +4,7 @@ const NAV_ITEMS = [
   { href: '/notes', label: 'メモ' },
   { href: '/chat', label: 'チャット' },
   { href: '/todos', label: 'ToDo' },
+  { href: '/files', label: 'ファイル' },
   { href: '/members', label: 'メンバー' },
   { href: '/activity', label: 'アクティビティ' },
   { href: '/settings', label: '設定' },
@@ -24,6 +25,7 @@ export function ProjectNav({
     | 'notes'
     | 'chat'
     | 'todos'
+    | 'files'
     | 'members'
     | 'activity'
     | 'settings';
@@ -34,6 +36,7 @@ export function ProjectNav({
     notes: active === 'notes',
     chat: active === 'chat',
     todos: active === 'todos',
+    files: active === 'files',
     members: active === 'members',
     activity: active === 'activity',
     settings: active === 'settings',

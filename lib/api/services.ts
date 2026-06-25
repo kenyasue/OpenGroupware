@@ -16,6 +16,8 @@ import { ChatRepository } from '@/repositories/ChatRepository';
 import { getSseHub } from '@/lib/sse/hub';
 import { TodoService } from '@/services/TodoService';
 import { TodoRepository } from '@/repositories/TodoRepository';
+import { FileStorageService } from '@/services/FileStorageService';
+import { FileRepository } from '@/repositories/FileRepository';
 
 /**
  * Route Handler用に各Repository/Serviceを構築するファクトリ。
@@ -78,6 +80,19 @@ export function createTodoService(): TodoService {
     new NotificationService(new NotificationRepository(db)),
     new ActivityLogService(new ActivityLogRepository(db)),
     getSseHub()
+  );
+}
+
+export function createFileStorageService(): FileStorageService {
+  const db = getDb();
+  const uploadsDir = process.env.UPLOADS_PATH ?? './data/uploads';
+  return new FileStorageService(
+    new FileRepository(db),
+    new ProjectMemberRepository(db),
+    new NotificationService(new NotificationRepository(db)),
+    new ActivityLogService(new ActivityLogRepository(db)),
+    getSseHub(),
+    uploadsDir
   );
 }
 
