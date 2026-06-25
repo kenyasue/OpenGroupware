@@ -19,7 +19,7 @@ export function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    // /login, /api, _next 静的 assets, favicon を除外
-    '/((?!login|api|_next/static|_next/image|favicon.ico).*)',
+    // /login, /api, _next 静的 assets, favicon, PWA静的リソース(manifest/SW/icon) を除外
+    '/((?!login|api|_next/static|_next/image|favicon.ico|sw\\.js|manifest\\.webmanifest|icon\\.svg|icon-192\\.png|icon-512\\.png).*)',
   ],
 };

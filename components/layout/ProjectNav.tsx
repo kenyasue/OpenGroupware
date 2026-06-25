@@ -46,7 +46,10 @@ export function ProjectNav({
   const { t } = useI18n();
 
   return (
-    <nav className="flex gap-4 border-b bg-white px-6 py-2 text-sm dark:border-gray-700 dark:bg-gray-800">
+    <nav
+      data-testid="project-nav"
+      className="flex gap-4 overflow-x-auto whitespace-nowrap border-b bg-white px-6 py-2 text-sm dark:border-gray-700 dark:bg-gray-800"
+    >
       {NAV_ITEMS.map((item) => {
         const href = `/projects/${projectId}${item.href}`;
         return (
