@@ -18,6 +18,8 @@ import { TodoService } from '@/services/TodoService';
 import { TodoRepository } from '@/repositories/TodoRepository';
 import { FileStorageService } from '@/services/FileStorageService';
 import { FileRepository } from '@/repositories/FileRepository';
+import { AttachmentService } from '@/services/AttachmentService';
+import { AttachmentRepository } from '@/repositories/AttachmentRepository';
 import { ScheduleService } from '@/services/ScheduleService';
 import { CalendarRepository } from '@/repositories/CalendarRepository';
 import { MilestoneRepository } from '@/repositories/MilestoneRepository';
@@ -51,11 +53,18 @@ export function createActivityLogService(): ActivityLogService {
 
 export function createBoardService(): BoardService {
   const db = getDb();
+  const memberRepo = new ProjectMemberRepository(db);
   return new BoardService(
     new BoardRepository(db),
-    new ProjectMemberRepository(db),
+    memberRepo,
     new NotificationService(new NotificationRepository(db)),
-    new ActivityLogService(new ActivityLogRepository(db))
+    new ActivityLogService(new ActivityLogRepository(db)),
+    new AttachmentService(
+      new AttachmentRepository(db),
+      new FileRepository(db),
+      memberRepo
+    ),
+    db
   );
 }
 
@@ -71,12 +80,19 @@ export function createNoteService(): NoteService {
 
 export function createChatService(): ChatService {
   const db = getDb();
+  const memberRepo = new ProjectMemberRepository(db);
   return new ChatService(
     new ChatRepository(db),
-    new ProjectMemberRepository(db),
+    memberRepo,
     new UserRepository(db),
     new NotificationService(new NotificationRepository(db)),
-    getSseHub()
+    getSseHub(),
+    new AttachmentService(
+      new AttachmentRepository(db),
+      new FileRepository(db),
+      memberRepo
+    ),
+    db
   );
 }
 

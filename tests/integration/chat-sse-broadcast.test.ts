@@ -5,8 +5,11 @@ import { UserRepository } from '@/repositories/UserRepository';
 import { ProjectRepository } from '@/repositories/ProjectRepository';
 import { ProjectMemberRepository } from '@/repositories/ProjectMemberRepository';
 import { ChatRepository } from '@/repositories/ChatRepository';
+import { FileRepository } from '@/repositories/FileRepository';
+import { AttachmentRepository } from '@/repositories/AttachmentRepository';
 import { NotificationRepository } from '@/repositories/NotificationRepository';
 import { NotificationService } from '@/services/NotificationService';
+import { AttachmentService } from '@/services/AttachmentService';
 import { ChatService } from '@/services/ChatService';
 import { SseHub, type SseClient } from '@/lib/sse/hub';
 
@@ -37,7 +40,13 @@ describe('chat → SSE broadcast (integration)', () => {
       members,
       users,
       new NotificationService(new NotificationRepository(db)),
-      hub
+      hub,
+      new AttachmentService(
+        new AttachmentRepository(db),
+        new FileRepository(db),
+        members
+      ),
+      db
     );
   });
 

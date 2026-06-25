@@ -22,10 +22,16 @@ export async function POST(
 
   const service = createBoardService();
   try {
+    const fileIds = Array.isArray(body.fileIds)
+      ? body.fileIds
+          .map((n) => Number(n))
+          .filter((n) => Number.isFinite(n) && n > 0)
+      : [];
     const comment = service.createComment(
       user.id,
       Number(threadId),
-      String(body.bodyMd ?? '')
+      String(body.bodyMd ?? ''),
+      fileIds
     );
     return NextResponse.json({ comment }, { status: 201 });
   } catch (error) {

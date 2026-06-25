@@ -1,7 +1,10 @@
 'use client';
 
-import { useEffect, useState, type FormEvent } from 'react';
-import type { ChatMessage } from '@/lib/types';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
+import type { ChatMessageWithAttachments } from '@/lib/types';
+import { AttachmentPicker } from '@/components/files/AttachmentPicker';
+import type { AttachmentPickerHandle } from '@/components/files/AttachmentPicker';
+import { AttachmentList } from '@/components/files/AttachmentList';
 
 interface ChatWindowProps {
   projectId: number;
@@ -9,16 +12,20 @@ interface ChatWindowProps {
 }
 
 export function ChatWindow({ projectId, userName }: ChatWindowProps) {
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [messages, setMessages] = useState<ChatMessageWithAttachments[]>([]);
   const [input, setInput] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [sending, setSending] = useState(false);
+  const [pickerLoading, setPickerLoading] = useState(false);
+  const pickerRef = useRef<AttachmentPickerHandle>(null);
 
   // 履歴取得
   useEffect(() => {
     fetch(`/api/projects/${projectId}/chat/messages`)
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
-        if (data?.items) setMessages(data.items as ChatMessage[]);
+        if (data?.items)
+          setMessages(data.items as ChatMessageWithAttachments[]);
       })
       .catch(() => undefined);
   }, [projectId]);
@@ -30,7 +37,10 @@ export function ChatWindow({ projectId, userName }: ChatWindowProps) {
       try {
         const parsed = JSON.parse(event.data) as {
           type: string;
-          data: { message?: ChatMessage; id?: number };
+          data: {
+            message?: ChatMessageWithAttachments;
+            id?: number;
+          };
         };
         if (parsed.type === 'chat.message.created' && parsed.data.message) {
           setMessages((prev) =>
@@ -42,9 +52,12 @@ export function ChatWindow({ projectId, userName }: ChatWindowProps) {
           parsed.type === 'chat.message.updated' &&
           parsed.data.message
         ) {
+          // 編集イベントは本文のみ更新し、添付は既存のものを保持する
           setMessages((prev) =>
             prev.map((m) =>
-              m.id === parsed.data.message!.id ? parsed.data.message! : m
+              m.id === parsed.data.message!.id
+                ? { ...m, ...parsed.data.message!, attachments: m.attachments }
+                : m
             )
           );
         } else if (parsed.type === 'chat.message.deleted' && parsed.data.id) {
@@ -61,13 +74,17 @@ export function ChatWindow({ projectId, userName }: ChatWindowProps) {
     event.preventDefault();
     if (!input.trim()) return;
     setError(null);
+    setSending(true);
+    const fileIds = pickerRef.current?.getFileIds() ?? [];
     const res = await fetch(`/api/projects/${projectId}/chat/messages`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ body: input }),
+      body: JSON.stringify({ body: input, fileIds }),
     });
+    setSending(false);
     if (res.ok) {
       setInput('');
+      pickerRef.current?.clear();
     } else {
       const b = (await res.json().catch(() => null)) as {
         error?: { message?: string };
@@ -95,6 +112,11 @@ export function ChatWindow({ projectId, userName }: ChatWindowProps) {
               >
                 {m.body}
               </span>
+              {m.attachments && m.attachments.length > 0 && (
+                <div className="max-w-[80%]">
+                  <AttachmentList attachments={m.attachments} />
+                </div>
+              )}
               <span className="mt-0.5 text-xs text-gray-400">
                 {m.createdAt}
               </span>
@@ -104,24 +126,32 @@ export function ChatWindow({ projectId, userName }: ChatWindowProps) {
       </div>
       <form
         onSubmit={onSend}
-        className="flex gap-2 border-t p-3"
+        className="space-y-2 border-t p-3"
         data-testid="chat-form"
       >
-        <input
-          type="text"
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          placeholder="メッセージを入力(@email でメンション)"
-          className="flex-1 rounded border px-3 py-2"
-          data-testid="chat-input"
+        <AttachmentPicker
+          ref={pickerRef}
+          projectId={projectId}
+          onLoadingChange={setPickerLoading}
         />
-        <button
-          type="submit"
-          className="rounded bg-blue-600 px-4 py-2 font-medium text-white hover:bg-blue-700"
-          data-testid="chat-send"
-        >
-          送信
-        </button>
+        <div className="flex gap-2">
+          <input
+            type="text"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            placeholder="メッセージを入力(@email でメンション)"
+            className="flex-1 rounded border px-3 py-2"
+            data-testid="chat-input"
+          />
+          <button
+            type="submit"
+            disabled={sending || pickerLoading}
+            className="rounded bg-blue-600 px-4 py-2 font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+            data-testid="chat-send"
+          >
+            {sending ? '送信中...' : '送信'}
+          </button>
+        </div>
       </form>
       {error && (
         <p className="px-3 pb-2 text-sm text-red-600" role="alert">

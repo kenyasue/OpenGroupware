@@ -181,6 +181,7 @@ repositories/
 ├── ChatRepository.ts
 ├── TodoRepository.ts
 ├── FileRepository.ts
+├── AttachmentRepository.ts
 ├── CalendarRepository.ts
 ├── MeetingRepository.ts
 ├── ProjectNoteRepository.ts
@@ -208,6 +209,7 @@ services/
 ├── MeetingService.ts
 ├── ScheduleService.ts
 ├── FileStorageService.ts
+├── AttachmentService.ts
 ├── BackupService.ts
 ├── TodoService.ts
 ├── BoardService.ts
@@ -234,7 +236,7 @@ components/
 ├── board/               # ThreadList, ThreadForm, CommentList
 ├── chat/                # ChatWindow, MessageInput, MessageList
 ├── todo/                # KanbanBoard, KanbanColumn, TodoCard
-├── files/               # FileList, Uploader, Lightbox
+├── files/               # FileList, Uploader, Lightbox, AttachmentList, AttachmentPicker
 ├── calendar/            # CalendarView, MonthView, WeekView, DayView, EventDetailDialog, CalendarEventForm
 ├── meetings/            # MeetingForm, ConflictWarning
 ├── notes/               # NoteEditor, MarkdownPreview

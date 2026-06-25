@@ -1,7 +1,9 @@
 'use client';
 
-import { useState, type FormEvent } from 'react';
+import { useRef, useState, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
+import { AttachmentPicker } from '@/components/files/AttachmentPicker';
+import type { AttachmentPickerHandle } from '@/components/files/AttachmentPicker';
 
 const CATEGORIES = [
   { value: '', label: 'なし' },
@@ -16,16 +18,19 @@ const CATEGORIES = [
 
 export function ThreadForm({ projectId }: { projectId: number }) {
   const router = useRouter();
+  const pickerRef = useRef<AttachmentPickerHandle>(null);
   const [title, setTitle] = useState('');
   const [bodyMd, setBodyMd] = useState('');
   const [category, setCategory] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [pickerLoading, setPickerLoading] = useState(false);
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setLoading(true);
     setError(null);
+    const fileIds = pickerRef.current?.getFileIds() ?? [];
     const res = await fetch(`/api/projects/${projectId}/board/threads`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -33,11 +38,13 @@ export function ThreadForm({ projectId }: { projectId: number }) {
         title,
         bodyMd,
         category: category || undefined,
+        fileIds,
       }),
     });
     setLoading(false);
     if (res.ok) {
       const data = (await res.json()) as { thread: { id: number } };
+      pickerRef.current?.clear();
       router.push(`/projects/${projectId}/board/${data.thread.id}`);
       router.refresh();
     } else {
@@ -82,6 +89,11 @@ export function ThreadForm({ projectId }: { projectId: number }) {
         className="min-h-[120px] w-full rounded border px-3 py-2"
         required
       />
+      <AttachmentPicker
+        ref={pickerRef}
+        projectId={projectId}
+        onLoadingChange={setPickerLoading}
+      />
       {error && (
         <p className="text-sm text-red-600" role="alert">
           {error}
@@ -89,7 +101,7 @@ export function ThreadForm({ projectId }: { projectId: number }) {
       )}
       <button
         type="submit"
-        disabled={loading}
+        disabled={loading || pickerLoading}
         className="rounded bg-blue-600 px-4 py-2 font-medium text-white hover:bg-blue-700 disabled:opacity-50"
       >
         {loading ? '作成中...' : 'スレッド作成'}

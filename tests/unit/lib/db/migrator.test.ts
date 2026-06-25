@@ -158,6 +158,7 @@ describe('Migrator', () => {
 
     const expectedTables = [
       'activity_logs',
+      'attachments',
       'board_comments',
       'board_threads',
       'calendar_events',
@@ -180,6 +181,7 @@ describe('Migrator', () => {
     }
     expect(migrator.getAppliedMigrations().map((m) => m.filename)).toEqual([
       '001_initial.sql',
+      '002_attachments.sql',
     ]);
   });
 });

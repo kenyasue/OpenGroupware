@@ -5,19 +5,29 @@ import { UserRepository } from '@/repositories/UserRepository';
 import { ProjectRepository } from '@/repositories/ProjectRepository';
 import { ProjectMemberRepository } from '@/repositories/ProjectMemberRepository';
 import { BoardRepository } from '@/repositories/BoardRepository';
+import { FileRepository } from '@/repositories/FileRepository';
+import { AttachmentRepository } from '@/repositories/AttachmentRepository';
 import { NotificationRepository } from '@/repositories/NotificationRepository';
 import { ActivityLogRepository } from '@/repositories/ActivityLogRepository';
 import { NotificationService } from '@/services/NotificationService';
 import { ActivityLogService } from '@/services/ActivityLogService';
+import { AttachmentService } from '@/services/AttachmentService';
 import { BoardService } from '@/services/BoardService';
 import { ForbiddenError, NotFoundError, ValidationError } from '@/lib/errors';
 
 function makeService(db: SqliteDatabase) {
+  const members = new ProjectMemberRepository(db);
   return new BoardService(
     new BoardRepository(db),
-    new ProjectMemberRepository(db),
+    members,
     new NotificationService(new NotificationRepository(db)),
-    new ActivityLogService(new ActivityLogRepository(db))
+    new ActivityLogService(new ActivityLogRepository(db)),
+    new AttachmentService(
+      new AttachmentRepository(db),
+      new FileRepository(db),
+      members
+    ),
+    db
   );
 }
 
@@ -166,5 +176,77 @@ describe('BoardService', () => {
 
   it('throws NotFoundError for a non-existent thread', () => {
     expect(() => service.getThread(memberId, 99999)).toThrow(NotFoundError);
+  });
+
+  it('createThread with fileIds attaches files to the thread', () => {
+    const fileRepo = new FileRepository(db);
+    const f1 = fileRepo.create({
+      projectId,
+      uploaderId: memberId,
+      filename: 'a.png',
+      originalName: 'a.png',
+      mimeType: 'image/png',
+      size: 1,
+      path: '/tmp/a.png',
+      source: 'attachment',
+    });
+    const thread = service.createThread(memberId, projectId, {
+      title: 'T',
+      bodyMd: 'b',
+      fileIds: [f1.id],
+    });
+    const atts = service.getAttachments(memberId, thread.id, []);
+    expect(atts.thread).toHaveLength(1);
+    expect(atts.thread[0].fileId).toBe(f1.id);
+  });
+
+  it('createComment with fileIds attaches files to the comment', () => {
+    const fileRepo = new FileRepository(db);
+    const f1 = fileRepo.create({
+      projectId,
+      uploaderId: memberId,
+      filename: 'c.png',
+      originalName: 'c.png',
+      mimeType: 'image/png',
+      size: 1,
+      path: '/tmp/c.png',
+      source: 'attachment',
+    });
+    const thread = service.createThread(authorId, projectId, {
+      title: 'T',
+      bodyMd: 'b',
+    });
+    const comment = service.createComment(memberId, thread.id, 'c', [f1.id]);
+    const atts = service.getAttachments(memberId, thread.id, [comment.id]);
+    expect(atts.comments).toHaveLength(1);
+    expect(atts.comments[0].targetId).toBe(comment.id);
+  });
+
+  it('deleteThread and deleteComment detach attachments', () => {
+    const fileRepo = new FileRepository(db);
+    const f1 = fileRepo.create({
+      projectId,
+      uploaderId: memberId,
+      filename: 'a.png',
+      originalName: 'a.png',
+      mimeType: 'image/png',
+      size: 1,
+      path: '/tmp/a.png',
+      source: 'attachment',
+    });
+    const thread = service.createThread(memberId, projectId, {
+      title: 'T',
+      bodyMd: 'b',
+      fileIds: [f1.id],
+    });
+    // 削除前は添付あり
+    expect(
+      new AttachmentRepository(db).findByTarget('board_thread', thread.id)
+    ).toHaveLength(1);
+    service.deleteThread(memberId, thread.id);
+    // 削除後は論理削除されて取得できない
+    expect(
+      new AttachmentRepository(db).findByTarget('board_thread', thread.id)
+    ).toHaveLength(0);
   });
 });

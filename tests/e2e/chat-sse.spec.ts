@@ -65,4 +65,50 @@ test.describe('chat (SSE realtime)', () => {
     await ownerContext.close();
     await memberContext.close();
   });
+
+  test('a message can carry file attachments rendered in the chat', async ({
+    page,
+  }) => {
+    const ownerEmail = unique('owner') + '@example.com';
+    await registerAndLogin(page, ownerEmail, 'Owner');
+    await page.getByLabel('プロジェクト名').fill(unique('Proj'));
+    await page.getByRole('button', { name: '新規プロジェクト' }).click();
+    await expect(page).toHaveURL(/\/projects\/\d+$/);
+    const projectId = Number(page.url().match(/\/projects\/(\d+)/)![1]);
+
+    // 添付ファイル(1x1 PNG)をアップロード
+    const png = Buffer.from(
+      'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=',
+      'base64'
+    );
+    const upRes = await page.request.post(
+      `/api/projects/${projectId}/attachments`,
+      {
+        multipart: {
+          file: { name: 'pic.png', mimeType: 'image/png', buffer: png },
+        },
+      }
+    );
+    expect(upRes.ok()).toBeTruthy();
+    const { file } = (await upRes.json()) as { file: { id: number } };
+
+    // ファイル付きメッセージ送信
+    const text = unique('with-attach');
+    const sendRes = await page.request.post(
+      `/api/projects/${projectId}/chat/messages`,
+      { data: { body: text, fileIds: [file.id] } }
+    );
+    expect(sendRes.ok()).toBeTruthy();
+    const { message } = (await sendRes.json()) as {
+      message: { attachments: { fileId: number }[] };
+    };
+    expect(message.attachments).toHaveLength(1);
+
+    // チャット画面に添付画像が表示される
+    await page.goto(`/projects/${projectId}/chat`);
+    await expect(page.getByTestId('chat-form')).toBeVisible();
+    await expect(page.getByTestId('attachment-list')).toBeVisible({
+      timeout: 10_000,
+    });
+  });
 });

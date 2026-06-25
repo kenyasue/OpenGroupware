@@ -77,4 +77,44 @@ test.describe('board', () => {
       page.getByRole('link', { name: new RegExp(title) })
     ).toHaveCount(0);
   });
+
+  test('thread and comment can carry file attachments', async ({ page }) => {
+    const projectId = await setupOwner(page);
+
+    // 添付ファイル(1x1 PNG)をアップロード
+    const png = Buffer.from(
+      'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=',
+      'base64'
+    );
+    const upRes = await page.request.post(
+      `/api/projects/${projectId}/attachments`,
+      {
+        multipart: {
+          file: { name: 'pic.png', mimeType: 'image/png', buffer: png },
+        },
+      }
+    );
+    expect(upRes.ok()).toBeTruthy();
+    const { file } = (await upRes.json()) as { file: { id: number } };
+
+    // ファイル付きスレッド作成
+    const title = unique('AttachThread');
+    const res = await page.request.post(
+      `/api/projects/${projectId}/board/threads`,
+      { data: { title, bodyMd: 'body', fileIds: [file.id] } }
+    );
+    expect(res.ok()).toBeTruthy();
+    const { thread } = (await res.json()) as { thread: { id: number } };
+
+    // ファイル付きコメント
+    const cRes = await page.request.post(
+      `/api/projects/${projectId}/board/threads/${thread.id}/comments`,
+      { data: { bodyMd: 'with file', fileIds: [file.id] } }
+    );
+    expect(cRes.ok()).toBeTruthy();
+
+    // 詳細ページでスレッド・コメントの添付が表示される
+    await page.goto(`/projects/${projectId}/board/${thread.id}`);
+    await expect(page.getByTestId('attachment-list').first()).toBeVisible();
+  });
 });

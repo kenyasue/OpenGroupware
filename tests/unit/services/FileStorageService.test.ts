@@ -157,4 +157,49 @@ describe('FileStorageService', () => {
     service.delete(authorId, file.id); // authorId is admin
     expect(() => service.getFileInfo(memberId, file.id)).toThrow();
   });
+
+  it('uploadForAttachment is silent: no notification/SSE/activity, source=attachment', () => {
+    const file = service.uploadForAttachment(authorId, projectId, {
+      originalName: 'pic.png',
+      mimeType: 'image/png',
+      data: Buffer.from('img'),
+    });
+    expect(file.source).toBe('attachment');
+    expect(fs.existsSync(file.path)).toBe(true);
+    // メンバーへの file_shared 通知は飛ばない
+    expect(new NotificationRepository(db).countUnreadByUser(memberId)).toBe(0);
+    // file_uploaded アクティビティは記録されない
+    expect(
+      new ActivityLogRepository(db)
+        .findByProject(projectId)
+        .items.some((l) => l.action === 'file_uploaded')
+    ).toBe(false);
+  });
+
+  it('uploadForAttachment result is excluded from the library list', () => {
+    service.uploadForAttachment(authorId, projectId, {
+      originalName: 'pic.png',
+      mimeType: 'image/png',
+      data: Buffer.from('img'),
+    });
+    const list = service.listFiles(authorId, projectId);
+    expect(list.total).toBe(0);
+  });
+
+  it('uploadForAttachment still enforces MIME and membership', () => {
+    expect(() =>
+      service.uploadForAttachment(authorId, projectId, {
+        originalName: 'evil.exe',
+        mimeType: 'application/x-msdownload',
+        data: Buffer.from('x'),
+      })
+    ).toThrow(ValidationError);
+    expect(() =>
+      service.uploadForAttachment(outsiderId, projectId, {
+        originalName: 'x.png',
+        mimeType: 'image/png',
+        data: Buffer.from('x'),
+      })
+    ).toThrow(ForbiddenError);
+  });
 });
