@@ -1,396 +1,288 @@
-# opencode Spec-Driven Development Boilerplate
+# OpenGroupware
 
-A spec-driven development boilerplate for [opencode](https://opencode.ai), converted from the
-[Claude Code boilerplate](https://git.yasue.org/ken/claudecode-boilerplate) that accompanies the book
-*"Practical Claude Code Introduction."*
+A simple, self-contained, project-based groupware built with **Next.js 15**, **TypeScript**, and
+**SQLite**. It runs entirely on Node.js (no external database or storage) and provides boards,
+Markdown notes, realtime chat (SSE), a Kanban ToDo board, file sharing, a calendar with milestones,
+meetings with schedule-conflict detection, search, dashboards, and admin backups.
 
-It gives opencode a structured workflow for turning ideas into production code through persistent design
-documents, per-task steering files, AI skills, subagents, and slash commands.
+The codebase follows a strict **layered architecture**:
+
+```
+UI (app/) → Service (services/) → Repository (repositories/) → Data (lib/db/)
+```
+
+Dependencies flow one direction only; SQL is always parameter-bound and accessed through the
+`SqliteDatabase` wrapper (never `better-sqlite3` directly in repositories).
 
 ---
 
 ## Table of Contents
 
-- [What Is Spec-Driven Development?](#what-is-spec-driven-development)
-- [Conversion Summary (Claude Code → opencode)](#conversion-summary-claude-code--opencode)
 - [Prerequisites](#prerequisites)
-- [Quick Start](#quick-start)
-- [Directory Structure](#directory-structure)
-- [Configuration Overview](#configuration-overview)
-- [Usage Workflow](#usage-workflow)
-- [Commands Reference](#commands-reference)
-- [Skills Reference](#skills-reference)
-- [Agents Reference](#agents-reference)
-- [Customizing the Boilerplate](#customizing-the-boilerplate)
+- [How to Start](#how-to-start)
+- [How to Test](#how-to-test)
+- [How to Develop](#how-to-develop)
+- [Environment Variables](#environment-variables)
+- [Project Structure](#project-structure)
+- [npm Scripts Reference](#npm-scripts-reference)
 - [Troubleshooting](#troubleshooting)
 - [License](#license)
 
 ---
 
-## What Is Spec-Driven Development?
-
-Spec-driven development separates **"what to build"** from **"how to build it"**:
-
-1. **Persistent documents** (`docs/`) — the north-star design (PRD, functional design, architecture, etc.)
-2. **Steering files** (`.steering/`) — per-task plans created fresh for each piece of work
-3. **Implementation** — the agent follows `tasklist.md`, updating progress as it goes
-4. **Verification** — tests, lint, typecheck, and a retrospective
-
-opencode loads the right skill automatically based on what you're doing, so you don't have to think about
-the process — just describe what you want.
-
----
-
-## Conversion Summary (Claude Code → opencode)
-
-| Claude Code | opencode | Notes |
-|---|---|---|
-| `CLAUDE.md` | `AGENTS.md` | Referenced via `instructions` in `opencode.json` |
-| `.claude/settings.json` | `opencode.json` | Permissions converted to opencode's `permission` schema |
-| `.claude/agents/*.md` | `.opencode/agent/*.md` | Added `mode: subagent`; `model: sonnet` removed (inherits default) |
-| `.claude/commands/*.md` | `.opencode/command/*.md` | Tool-call syntax (`Bash()`, `Grep()`, `Skill()`) converted to natural instructions; `$ARGUMENTS` added |
-| `.claude/skills/*/SKILL.md` | `.opencode/skills/*/SKILL.md` | `allowed-tools` frontmatter removed (not an opencode field) |
-| `Skill('steering')` calls | Auto-loaded by description | opencode surfaces skills via `description` matching |
-| `TodoWrite` / `Edit` tool refs | `todowrite` / `edit` | Lowercased to match opencode tool names |
-| Claude Code devcontainer feature | `curl … opencode.ai/install` | Replaced Anthropic feature with opencode install script |
-
-All skill templates and guides were preserved verbatim except for `.claude/` path references and
-"Claude Code" mentions, which were updated to `.opencode/` and "opencode" respectively.
-
----
-
 ## Prerequisites
 
-- **Node.js** v18+ (v24.11.0 recommended)
-- **npm**
-- **opencode** — install with:
-  ```bash
-  curl -fsSL https://opencode.ai/install | bash
-  ```
-  See <https://opencode.ai/docs> for alternatives (npm, Homebrew, etc.)
-- **Docker** (only if using the Dev Container)
+- **Node.js** v24.11.0 (LTS; v18+ works) — the dev container pins this version
+- **npm** 11.x (bundled with Node.js)
+- **Playwright browsers** for E2E tests (see [How to Test](#how-to-test))
+
+A Dev Container configuration (`.devcontainer/`) is included for VS Code.
 
 ---
 
-## Quick Start
-
-### Option A — Dev Container (recommended)
-
-1. Open this folder in **VS Code**.
-2. When prompted, click **"Reopen in Container"** (or run the command
-   *Dev Containers: Reopen in Container*).
-3. The container automatically:
-   - Installs Node.js LTS
-   - Runs `npm install`
-   - Installs opencode
-4. Open a terminal and start opencode:
-   ```bash
-   opencode
-   ```
-
-### Option B — Manual setup
+## How to Start
 
 ```bash
 # 1. Install dependencies
 npm install
 
-# 2. Set up Git hooks
-npm run prepare
+# 2. Create your local environment file
+cp .env.example .env
+#   Edit .env if you want to change SQLITE_PATH / SESSION_SECRET / UPLOADS_PATH.
+#   SESSION_SECRET is required — the app will not start without it.
 
-# 3. Start opencode
-opencode
+# 3. Initialize the database (runs all SQL migrations)
+npm run migrate
+
+# 4. Start the development server
+npm run dev
+```
+
+The app is then available at **http://localhost:3000**.
+
+- The first user you register becomes a regular `member`. To use admin features
+  (backups, migration status), promote a user to `system_admin` in the DB, or seed one:
+  ```bash
+  npx tsx -e "import('./lib/db/sqlite.ts').then(async m => { \
+    const { UserRepository } = await import('./repositories/UserRepository.ts'); \
+    const bcrypt = (await import('bcrypt')).default; \
+    const db = new m.SqliteDatabase(process.env.SQLITE_PATH ?? './data/app.db'); \
+    new UserRepository(db).create({ name:'Admin', email:'admin@example.com', \
+      passwordHash: bcrypt.hashSync('admin123', 10), role:'system_admin' }); db.close(); })"
+  ```
+- The SQLite database lives at `./data/app.db` (and uploads under `./data/uploads/`). Both are
+  git-ignored. Deleting `./data/` and re-running `npm run migrate` gives a clean slate.
+
+### Production build
+
+```bash
+npm run build
+npm run start      # serves the optimized build on http://localhost:3000
 ```
 
 ---
 
-## Directory Structure
+## How to Test
+
+There are three test layers: **Unit/Integration** (Vitest) and **E2E** (Playwright).
+
+### Unit & integration tests (Vitest)
+
+```bash
+npm test                 # run all unit/integration tests once
+npm run test:watch       # watch mode
+npm run test:coverage    # run with coverage (threshold: 80% for repositories/** + services/**)
+```
+
+These use a real temporary SQLite database per test (see `tests/helpers/db.ts`) and cover every
+Repository, Service, and the key algorithms (schedule-conflict, milestone progress, session tokens,
+notification targeting).
+
+### End-to-end tests (Playwright)
+
+```bash
+npm run test:e2e         # run the full E2E suite (headless)
+npm run test:e2e:ui      # interactive UI mode — test tree + per-step screenshots/traces
+```
+
+Before running E2E:
+
+```bash
+# Install the Chromium browser once (per machine)
+npx playwright install chromium
+```
+
+How E2E works:
+- Playwright's `webServer` runs `npm run migrate && npm run dev` automatically, so the DB is
+  initialized and the dev server is started for you.
+- A `globalSetup` (`tests/e2e/globalSetup.ts`) seeds an `admin@example.com` / `admin123`
+  (`system_admin`) account used by the admin/backup tests.
+- The suite runs with `workers: 1` for deterministic behavior (the realtime SSE test needs low
+  contention against the single dev server).
+- E2E specs live in `tests/e2e/*.spec.ts` (auth, project-management, board, notes, chat-sse,
+  todo-kanban, file-sharing, calendar, meetings, search/dashboard, notifications, activity-log,
+  backup).
+
+### Lint, type-check, build
+
+```bash
+npm run lint
+npm run typecheck
+npm run build
+```
+
+Run all three green before committing. A pre-commit hook (Husky + lint-staged) auto-fixes and
+formats staged files.
+
+### Recommended full check before opening a PR
+
+```bash
+npm run lint && npm run typecheck && npm test && npm run build && npm run test:e2e
+```
+
+---
+
+## How to Develop
+
+### Typical workflow
+
+1. Branch from `main`: `git checkout -b feature/<name>` (or `fix/`, `refactor/`).
+2. Implement following the layered architecture and coding conventions (see
+   `docs/development-guidelines.md`):
+   - Route handlers in `app/api/.../route.ts` start with `export const runtime = 'nodejs';` (Edge
+     runtime is forbidden because of better-sqlite3).
+   - Services do permission checks and call repositories; repositories hold SQL and use parameter
+     binding (`@param`) and `deleted_at IS NULL` for soft-deleted tables.
+   - Map DB `snake_case` columns to camelCase entity fields in repository mappers.
+   - All list endpoints paginate (`LIMIT`/`OFFSET`).
+3. Add Unit tests for any new Repository/Service, and an E2E spec for user-facing flows.
+4. Ensure `npm run lint`, `npm run typecheck`, `npm test`, and `npm run build` are green.
+5. Merge to `main` (merge commit). Milestones in this project were delivered one per branch, each
+   merged to `main` before the next branched off.
+
+### Database migrations
+
+Migrations are plain SQL files in `lib/db/migrations/`, named `NNN_description.sql` and run in
+filename order. Each file runs in its own transaction and is recorded in `schema_migrations`.
+
+```bash
+npm run migrate          # apply pending migrations
+```
+
+To add a schema change, create e.g. `lib/db/migrations/002_add_column.sql` and re-run
+`npm run migrate`. Never edit an already-applied migration — add a new one.
+
+### Realtime (SSE)
+
+`lib/sse/hub.ts` (`SseHub`) keeps an in-memory set of clients per project and broadcasts events only
+to that project's clients. Services inject the hub and call `broadcast(projectId, event)`; the
+stream endpoint `GET /api/projects/:projectId/chat/stream` registers a client and cleans up on
+abort. The chat UI uses `EventSource` (auto-reconnect).
+
+### Sessions & auth
+
+Stateless signed-cookie sessions (`lib/auth/session.ts`): the cookie is
+`base64url({uid,iat}).base64url(hmacSha256(secret, payload))`, verified server-side with
+`crypto.timingSafeEqual` and an `iat` expiry check. `middleware.ts` does a coarse cookie-presence
+redirect for pages; the real HMAC + DB verification happens in `getCurrentUser` (Node runtime).
+
+### Where things live
+
+| Concern | Location |
+|---|---|
+| Pages & API routes | `app/` |
+| Business logic, permissions | `services/` |
+| SQL & data access | `repositories/` |
+| DB wrapper, migrations, SSE, auth, types, validators | `lib/` |
+| React components | `components/` |
+| Tests | `tests/unit`, `tests/integration`, `tests/e2e` |
+
+### Spec-driven workflow (optional)
+
+This project also ships an opencode spec-driven workflow (see `AGENTS.md`, `docs/`, `.steering/`,
+`.opencode/`). Persistent design docs live in `docs/`; per-task plans live in
+`.steering/[YYYYMMDD]-[name]/`. You can drive new work with `/add-feature <name>` in opencode, but
+normal Git + `npm` development works too.
+
+---
+
+## Environment Variables
+
+Configured via `.env` (copy from `.env.example`):
+
+| Variable | Default | Purpose |
+|---|---|---|
+| `SQLITE_PATH` | `./data/app.db` | SQLite database file path |
+| `SESSION_SECRET` | _(must set)_ | HMAC secret for signing session cookies |
+| `UPLOADS_PATH` | `./data/uploads` | Directory for uploaded files |
+
+`SESSION_SECRET` must be set — the app throws on startup if it is missing. Never commit `.env`.
+
+---
+
+## Project Structure
 
 ```
 .
-├── opencode.json              # opencode config (permissions, instructions)
-├── AGENTS.md                  # Project instructions (loaded into every session)
-├── package.json               # Node.js project + scripts
-├── tsconfig.json              # TypeScript config
-├── eslint.config.js           # ESLint flat config
-├── vitest.config.ts           # Vitest config (80% coverage threshold)
-├── .prettierrc / .prettierignore
-├── .gitignore
-├── .husky/pre-commit          # Runs lint-staged + typecheck before commit
-├── .devcontainer/devcontainer.json
-├── prompt.md                  # Example MVP prompt
-│
-├── src/                       # Source code
-│   ├── example.ts
-│   └── example.test.ts
-│
-├── docs/                      # Persistent design documents (created by /setup-project)
-│   └── ideas/
-│       └── initial-requirements.md   # Brainstorming notes (pre-PRD)
-│
-├── .steering/                 # Per-task steering files (created by /add-feature)
-│   └── .gitkeep
-│
-└── .opencode/                 # opencode configuration
-    ├── agent/                 # Subagent definitions
-    │   ├── doc-reviewer.md
-    │   └── implementation-validator.md
-    ├── command/               # Slash commands
-    │   ├── setup-project.md
-    │   ├── add-feature.md
-    │   └── review-docs.md
-    └── skills/                # Task-specific skills
-        ├── prd-writing/           (SKILL.md + template.md)
-        ├── functional-design/     (SKILL.md + template.md + guide.md)
-        ├── architecture-design/   (SKILL.md + template.md + guide.md)
-        ├── repository-structure/  (SKILL.md + template.md + guide.md)
-        ├── development-guidelines/(SKILL.md + template.md + guides/)
-        ├── glossary-creation/     (SKILL.md + template.md + guide.md)
-        └── steering/              (SKILL.md + templates/)
+├── app/                 # Next.js App Router: pages + Route Handlers (all runtime='nodejs')
+│   ├── api/             # REST/SSE endpoints
+│   ├── projects/[projectId]/  # project screens (board, notes, chat, todos, files, calendar, ...)
+│   ├── admin/backups/   # admin-only backup screen
+│   └── login / profile / dashboard / notifications
+├── lib/
+│   ├── db/              # SqliteDatabase, Migrator, migrations/*.sql
+│   ├── sse/             # SseHub
+│   ├── auth/            # session, getCurrentUser
+│   ├── types/           # entity & event types
+│   ├── validators/      # input validators
+│   ├── api/             # service factories + error handling for route handlers
+│   └── errors.ts        # AppError hierarchy (ValidationError, ForbiddenError, ...)
+├── repositories/        # one class per table (SQL + mapping)
+├── services/            # business logic + permission checks + side effects
+├── components/          # React components by area (layout, board, chat, todo, ...)
+├── tests/
+│   ├── unit/            # Vitest — mirrors source structure
+│   ├── integration/     # Vitest — real temp SQLite DB
+│   ├── e2e/             # Playwright specs + globalSetup.ts
+│   └── helpers/db.ts    # createTestDb() / createMigratedTestDb()
+├── data/                # git-ignored: app.db, uploads/
+├── backups/             # git-ignored: backup-<timestamp>.zip
+├── docs/                # persistent design docs (PRD, architecture, milestones, ...)
+└── .steering/           # per-task plans (git-ignored working artifacts)
 ```
 
 ---
 
-## Configuration Overview
+## npm Scripts Reference
 
-### `opencode.json`
-
-The main configuration file. Key sections:
-
-```jsonc
-{
-  "$schema": "https://opencode.ai/config.json",
-  "instructions": ["AGENTS.md"],     // Loaded into every session
-  "permission": {
-    "skill": "allow",                // Skills are auto-available
-    "bash": {                        // Common dev commands pre-approved
-      "*": "ask",
-      "npm *": "allow",
-      "npx *": "allow",
-      "git *": "allow",
-      // ...
-    }
-  }
-}
-```
-
-> **After editing `opencode.json`, quit and restart opencode** — config is loaded once at startup.
-
-### `AGENTS.md`
-
-The project memory file. opencode reads it on every session. It defines:
-- The technology stack
-- The spec-driven development principles
-- The directory structure
-- The development process and workflow
-
-### Agents (`.opencode/agent/`)
-
-Subagents run in isolated contexts via the `task` tool. They don't consume the main session's context.
-
-### Commands (`.opencode/command/`)
-
-Slash commands invoked in the opencode TUI with `/command-name`. Each command is a prompt template
-that opencode executes.
-
-### Skills (`.opencode/skills/`)
-
-Skills are loaded automatically based on their `description` field. You don't invoke them by name —
-opencode surfaces the right skill when the task matches.
-
----
-
-## Usage Workflow
-
-### 1. Initial project setup
-
-Run the setup command to create all six persistent design documents interactively:
-
-```
-> /setup-project
-```
-
-This creates (one at a time, with your approval):
-1. `docs/product-requirements.md` (PRD)
-2. `docs/functional-design.md`
-3. `docs/architecture.md`
-4. `docs/repository-structure.md`
-5. `docs/development-guidelines.md`
-6. `docs/glossary.md`
-
-The PRD is based on the brainstorming notes in `docs/ideas/initial-requirements.md`. Edit that file
-first if you have your own idea, or replace it.
-
-### 2. Add a feature
-
-```
-> /add-feature User authentication
-```
-
-This fully autonomous workflow:
-1. Creates `.steering/[YYYYMMDD]-[feature-name]/` with `requirements.md`, `design.md`, `tasklist.md`
-2. Generates the steering files (planning mode of the steering skill)
-3. Implements every task in `tasklist.md`, marking each `[ ]` → `[x]` as it goes
-4. Launches the `implementation-validator` subagent for quality review
-5. Runs `npm test`, `npm run lint`, `npm run typecheck`
-6. Records a retrospective in `tasklist.md`
-
-### 3. Review a document
-
-```
-> /review-docs docs/product-requirements.md
-```
-
-Launches the `doc-reviewer` subagent to evaluate the document from five perspectives:
-completeness, clarity, consistency, implementability, and measurability.
-
-### 4. Day-to-day editing
-
-You don't always need a command — just ask in normal conversation:
-
-```
-> Add a new feature to the PRD
-> Review the performance requirements in architecture.md
-> Add a new domain term to glossary.md
-```
-
-opencode loads the appropriate skill automatically.
-
----
-
-## Commands Reference
-
-| Command | Description | Example |
-|---|---|---|
-| `/setup-project` | Create the six persistent documents interactively | `/setup-project` |
-| `/add-feature` | Implement a feature end-to-end (autonomous) | `/add-feature User profile editing` |
-| `/review-docs` | Detailed document review via subagent | `/review-docs docs/architecture.md` |
-
----
-
-## Skills Reference
-
-| Skill | When it loads | Output |
-|---|---|---|
-| `prd-writing` | Creating a Product Requirements Document | `docs/product-requirements.md` |
-| `functional-design` | Creating a functional design document | `docs/functional-design.md` |
-| `architecture-design` | Designing the system architecture | `docs/architecture.md` |
-| `repository-structure` | Defining the directory layout | `docs/repository-structure.md` |
-| `development-guidelines` | Creating coding conventions / implementing code | `docs/development-guidelines.md` |
-| `glossary-creation` | Creating a project glossary | `docs/glossary.md` |
-| `steering` | Planning, implementing, and retrospecting on a task | `.steering/[date]-[name]/` files |
-
-Each skill folder contains a `SKILL.md` (instructions) plus `template.md` and/or `guide.md` (reference
-material the skill points to).
-
----
-
-## Agents Reference
-
-| Agent | Mode | Purpose |
-|---|---|---|
-| `doc-reviewer` | subagent | Reviews document quality across 5 dimensions; outputs a scored report with prioritized improvements |
-| `implementation-validator` | subagent | Validates code against the spec; checks quality, test coverage, security, performance; runs lint/test/typecheck |
-
-Agents are launched via the `task` tool (e.g., by the `/add-feature` and `/review-docs` commands).
-They run in an isolated context window.
-
----
-
-## Customizing the Boilerplate
-
-### Change the model
-
-Agents inherit the default model from `opencode.json`. To pin a specific model for a subagent, add
-`model` to its frontmatter:
-
-```yaml
----
-description: ...
-mode: subagent
-model: anthropic/claude-sonnet-4-6
----
-```
-
-Or set a global default in `opencode.json`:
-
-```jsonc
-{
-  "model": "anthropic/claude-sonnet-4-6"
-}
-```
-
-> Model IDs use the `provider/model-id` format. See <https://opencode.ai/config.json> for the full schema.
-
-### Adjust permissions
-
-Edit the `permission` block in `opencode.json`. For example, to allow all bash commands:
-
-```jsonc
-{
-  "permission": { "bash": "allow" }
-}
-```
-
-### Add a new skill
-
-1. Create `.opencode/skills/my-skill/SKILL.md`
-2. Add frontmatter with `name` and `description` (the description controls when opencode loads it)
-3. Add any companion `template.md` or `guide.md` files
-4. Restart opencode
-
-### Add a new command
-
-1. Create `.opencode/command/my-command.md`
-2. Add `description` frontmatter + a prompt body (use `$ARGUMENTS` for user input)
-3. Restart opencode
-
-### Add a new agent
-
-1. Create `.opencode/agent/my-agent.md`
-2. Add `description` and `mode: subagent` frontmatter + a prompt body
-3. Restart opencode
+| Script | Description |
+|---|---|
+| `npm run dev` | Start the Next.js dev server (http://localhost:3000) |
+| `npm run build` | Production build |
+| `npm run start` | Serve the production build |
+| `npm run lint` | ESLint |
+| `npm run format` | Prettier (write) |
+| `npm run typecheck` | `tsc --noEmit` |
+| `npm test` | Run unit/integration tests (Vitest, once) |
+| `npm run test:watch` | Vitest watch mode |
+| `npm run test:coverage` | Vitest with coverage (80% threshold on repos+services) |
+| `npm run test:e2e` | Playwright E2E (headless, full suite) |
+| `npm run test:e2e:ui` | Playwright interactive UI mode (screenshots + traces) |
+| `npm run migrate` | Apply SQL migrations |
 
 ---
 
 ## Troubleshooting
 
-### opencode won't start after editing config
-
-opencode validates `opencode.json` strictly and refuses to start on invalid fields. To recover:
-
-```bash
-# Skip the project config and start from globals only
-OPENCODE_DISABLE_PROJECT_CONFIG=1 opencode
-```
-
-Then fix the broken file and restart normally.
-
-### Skills not loading
-
-- Ensure each `SKILL.md` has a `description` in its frontmatter — skills without one are filtered out.
-- Ensure the folder name matches the `name` field.
-- Restart opencode after adding or changing skills.
-
-### Commands not appearing
-
-- Command files must be directly inside `.opencode/command/` (not in subdirectories).
-- Restart opencode after adding commands.
-
-### Dev Container: `opencode` command not found
-
-The install script adds opencode to `~/.opencode/bin/` and updates your shell profile. If the command
-isn't found in a new terminal:
-
-```bash
-export PATH="$HOME/.opencode/bin:$PATH"
-opencode
-```
-
-Or create a permanent symlink:
-
-```bash
-sudo ln -sf "$HOME/.opencode/bin/opencode" /usr/local/bin/opencode
-```
+- **App won't start: `SESSION_SECRET is not configured`** — create `.env` from `.env.example` and
+  set `SESSION_SECRET`.
+- **`npm run migrate` fails with "more than one statement"** — ensure the migrator uses
+  `SqliteDatabase.exec()` (it does); this is a historical footgun with `better-sqlite3`'s
+  `prepare()`.
+- **E2E: `Executable doesn't exist`** — run `npx playwright install chromium`.
+- **E2E: tests flaky/failing** — the suite is pinned to `workers: 1`; ensure no other `npm run dev`
+  is occupying port 3000, and remove `./data/` before a clean run.
+- **Port 3000 busy** — stop the other process (`lsof -ti:3000 | xargs kill`) before running dev/E2E.
 
 ---
 
