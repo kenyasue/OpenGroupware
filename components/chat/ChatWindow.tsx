@@ -81,8 +81,19 @@ export function ChatWindow({ projectId, userName }: ChatWindowProps) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ body: input, fileIds }),
     });
-    setSending(false);
     if (res.ok) {
+      // 送信したメッセージを即座に表示(SSE到着前でも見えるように楽観追加)。
+      // SSEの chat.message.created は id で重複排除する。
+      const data = (await res.json().catch(() => null)) as {
+        message?: ChatMessageWithAttachments;
+      } | null;
+      if (data?.message) {
+        setMessages((prev) =>
+          prev.some((m) => m.id === data.message!.id)
+            ? prev
+            : [data.message!, ...prev]
+        );
+      }
       setInput('');
       pickerRef.current?.clear();
     } else {
@@ -91,6 +102,7 @@ export function ChatWindow({ projectId, userName }: ChatWindowProps) {
       } | null;
       setError(b?.error?.message ?? '送信に失敗しました');
     }
+    setSending(false);
   }
 
   return (
