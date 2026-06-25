@@ -1,12 +1,30 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { cookies } from 'next/headers';
 import './globals.css';
 import { I18nProvider } from '@/lib/i18n/I18nProvider';
+import { ServiceWorkerRegister } from '@/components/pwa/ServiceWorkerRegister';
 import type { Locale, Theme } from '@/lib/types';
 
 export const metadata: Metadata = {
   title: 'Groupware',
   description: 'Project-based team collaboration tool',
+  applicationName: 'Groupware',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'Groupware',
+  },
+  icons: {
+    icon: '/icon.svg',
+    apple: '/icon-192.png',
+  },
+};
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  viewportFit: 'cover',
+  themeColor: '#2563eb',
 };
 
 function resolveTheme(v: string | undefined): Theme {
@@ -36,6 +54,7 @@ export default async function RootLayout({
         <I18nProvider initialLocale={locale} initialTheme={theme}>
           {children}
         </I18nProvider>
+        <ServiceWorkerRegister />
       </body>
     </html>
   );

@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="Groupware">
+  <rect width="512" height="512" rx="96" fill="#2563eb"/>
+  <circle cx="256" cy="196" r="84" fill="#ffffff"/>
+  <path d="M128 432c0-70.7 57.3-128 128-128s128 57.3 128 128v24H128z" fill="#ffffff"/>
+</svg>

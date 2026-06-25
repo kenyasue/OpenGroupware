@@ -24,10 +24,10 @@ export function Header({ user }: { user: PublicUser }) {
       >
         {t('app.name')}
       </a>
-      <nav className="flex items-center gap-4 text-sm">
+      <nav className="flex items-center gap-3 text-sm sm:gap-4">
         <a
           href="/dashboard"
-          className="text-gray-600 hover:underline dark:text-gray-300"
+          className="hidden text-gray-600 hover:underline sm:inline dark:text-gray-300"
         >
           {t('nav.dashboard')}
         </a>
