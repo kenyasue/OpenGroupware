@@ -5,10 +5,13 @@ import { UserRepository } from '@/repositories/UserRepository';
 import { ProjectRepository } from '@/repositories/ProjectRepository';
 import { ProjectMemberRepository } from '@/repositories/ProjectMemberRepository';
 import { TodoRepository } from '@/repositories/TodoRepository';
+import { FileRepository } from '@/repositories/FileRepository';
+import { AttachmentRepository } from '@/repositories/AttachmentRepository';
 import { NotificationRepository } from '@/repositories/NotificationRepository';
 import { ActivityLogRepository } from '@/repositories/ActivityLogRepository';
 import { NotificationService } from '@/services/NotificationService';
 import { ActivityLogService } from '@/services/ActivityLogService';
+import { AttachmentService } from '@/services/AttachmentService';
 import { TodoService } from '@/services/TodoService';
 import { SseHub } from '@/lib/sse/hub';
 import { ForbiddenError, NotFoundError } from '@/lib/errors';
@@ -24,7 +27,13 @@ function makeService(db: SqliteDatabase) {
       members,
       new NotificationService(new NotificationRepository(db)),
       new ActivityLogService(new ActivityLogRepository(db)),
-      hub
+      hub,
+      new AttachmentService(
+        new AttachmentRepository(db),
+        new FileRepository(db),
+        members
+      ),
+      db
     ),
     members,
     users,
@@ -160,5 +169,143 @@ describe('TodoService', () => {
     expect(() => service.toggleComplete(authorId, 99999)).toThrow(
       NotFoundError
     );
+  });
+
+  it('createItem persists startDate/tags and attaches files', () => {
+    const col = service.getColumns(authorId, projectId)[0];
+    const fileRepo = new FileRepository(db);
+    const f1 = fileRepo.create({
+      projectId,
+      uploaderId: authorId,
+      filename: 'a.png',
+      originalName: 'a.png',
+      mimeType: 'image/png',
+      size: 1,
+      path: '/tmp/a.png',
+      source: 'attachment',
+    });
+    const item = service.createItem(authorId, projectId, {
+      title: 'rich',
+      columnId: col.id,
+      startDate: '2026-07-01',
+      dueDate: '2026-07-31',
+      tags: 'frontend,urgent',
+      fileIds: [f1.id],
+    });
+    expect(item.startDate).toBe('2026-07-01');
+    expect(item.tags).toBe('frontend,urgent');
+    expect(service.getItemAttachments(authorId, item.id)).toHaveLength(1);
+  });
+
+  it('updateItem updates startDate/tags and attaches new files', () => {
+    const col = service.getColumns(authorId, projectId)[0];
+    const item = service.createItem(authorId, projectId, {
+      title: 't',
+      columnId: col.id,
+    });
+    const fileRepo = new FileRepository(db);
+    const f1 = fileRepo.create({
+      projectId,
+      uploaderId: authorId,
+      filename: 'b.png',
+      originalName: 'b.png',
+      mimeType: 'image/png',
+      size: 1,
+      path: '/tmp/b.png',
+      source: 'attachment',
+    });
+    const updated = service.updateItem(authorId, item.id, {
+      description: 'desc',
+      startDate: '2026-08-01',
+      tags: 'backend',
+      fileIds: [f1.id],
+    });
+    expect(updated.description).toBe('desc');
+    expect(updated.startDate).toBe('2026-08-01');
+    expect(updated.tags).toBe('backend');
+    expect(service.getItemAttachments(authorId, item.id)).toHaveLength(1);
+  });
+
+  it('deleteItem detaches its attachments', () => {
+    const col = service.getColumns(authorId, projectId)[0];
+    const fileRepo = new FileRepository(db);
+    const f1 = fileRepo.create({
+      projectId,
+      uploaderId: authorId,
+      filename: 'a.png',
+      originalName: 'a.png',
+      mimeType: 'image/png',
+      size: 1,
+      path: '/tmp/a.png',
+      source: 'attachment',
+    });
+    const item = service.createItem(authorId, projectId, {
+      title: 't',
+      columnId: col.id,
+      fileIds: [f1.id],
+    });
+    expect(service.getItemAttachments(authorId, item.id)).toHaveLength(1);
+    service.deleteItem(authorId, item.id);
+    expect(
+      new AttachmentRepository(db).findByTarget('todo_item', item.id)
+    ).toHaveLength(0);
+  });
+
+  it('getItem and getItemAttachments enforce membership', () => {
+    const col = service.getColumns(authorId, projectId)[0];
+    const item = service.createItem(authorId, projectId, {
+      title: 't',
+      columnId: col.id,
+    });
+    expect(service.getItem(authorId, item.id).id).toBe(item.id);
+    expect(() => service.getItem(outsiderId, item.id)).toThrow(ForbiddenError);
+    expect(() => service.getItemAttachments(outsiderId, item.id)).toThrow(
+      ForbiddenError
+    );
+  });
+
+  it('only the creator or an admin can delete an item (member-but-not-creator cannot)', () => {
+    const col = service.getColumns(authorId, projectId)[0];
+    // authorId(admin)が作成したアイテムを memberId(非管理者・非作成者)は削除できない
+    const item = service.createItem(authorId, projectId, {
+      title: 't',
+      columnId: col.id,
+    });
+    expect(() => service.deleteItem(memberId, item.id)).toThrow(ForbiddenError);
+    // admin(作成者)は削除可
+    service.deleteItem(authorId, item.id);
+    expect(() => service.getItem(authorId, item.id)).toThrow(NotFoundError);
+  });
+
+  it('deleteColumn: admin can delete, non-admin member cannot', () => {
+    const col = service.getColumns(authorId, projectId)[0];
+    // memberId(非管理者)はカラム削除不可
+    expect(() => service.deleteColumn(memberId, col.id)).toThrow(
+      ForbiddenError
+    );
+    // authorId(admin)は削除可
+    service.deleteColumn(authorId, col.id);
+    expect(() => service.updateColumn(authorId, col.id, { name: 'x' })).toThrow(
+      NotFoundError
+    );
+  });
+
+  it('clears startDate/tags/assigneeId via null on update', () => {
+    const col = service.getColumns(authorId, projectId)[0];
+    const item = service.createItem(authorId, projectId, {
+      title: 't',
+      columnId: col.id,
+      startDate: '2026-07-01',
+      tags: 'a,b',
+      assigneeId: memberId,
+    });
+    const cleared = service.updateItem(authorId, item.id, {
+      startDate: null,
+      tags: null,
+      assigneeId: null,
+    });
+    expect(cleared.startDate).toBeNull();
+    expect(cleared.tags).toBeNull();
+    expect(cleared.assigneeId).toBeNull();
   });
 });

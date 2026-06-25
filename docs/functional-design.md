@@ -200,6 +200,7 @@ interface TodoItem {
   completedAt: string | null;
   orderIndex: number;
   milestoneId: number | null;   // FK milestones.id
+  tags: string | null;          // カンマ区切りのタグ(project_notes.tags と同じ方式)
   createdAt: string;
   updatedAt: string;
   deletedAt: string | null;
@@ -219,9 +220,31 @@ interface FileAsset {
   mimeType: string;             // MIMEタイプ（アップロード時チェック）
   size: number;                 // バイト数
   path: string;                 // ローカルパス（uploads/...）
+  source: FileAssetSource;      // 'library'(Files一覧公開) | 'attachment'(添付専用)
   createdAt: string;
   deletedAt: string | null;
 }
+type FileAssetSource = 'library' | 'attachment';
+```
+
+### attachments
+
+```typescript
+// file_assets とチャット/掲示板/ToDo を多対多で紐付ける
+interface Attachment {
+  id: number;
+  projectId: number;            // FK projects.id ON DELETE CASCADE
+  fileId: number;               // FK file_assets.id
+  targetType: AttachmentTargetType;
+  targetId: number;             // targetType に応じた chat_message/board_thread/board_comment/todo_item の id
+  createdAt: string;
+  deletedAt: string | null;
+}
+type AttachmentTargetType =
+  | 'chat_message'
+  | 'board_thread'
+  | 'board_comment'
+  | 'todo_item';
 ```
 
 ### project_notes
@@ -410,6 +433,7 @@ erDiagram
         integer assignee_id FK
         integer milestone_id FK
         text due_date
+        text tags
     }
     meetings {
         integer id PK

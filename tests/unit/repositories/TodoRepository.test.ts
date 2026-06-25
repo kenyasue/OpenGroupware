@@ -114,6 +114,49 @@ describe('TodoRepository', () => {
     expect(updated?.completedAt).toBeTruthy();
   });
 
+  it('persists startDate and tags on create', () => {
+    const item = repo.createItem({
+      projectId,
+      columnId,
+      title: 't',
+      creatorId: userId,
+      orderIndex: 0,
+      startDate: '2026-07-01',
+      tags: 'frontend,urgent',
+    });
+    const found = repo.findItemById(item.id);
+    expect(found?.startDate).toBe('2026-07-01');
+    expect(found?.tags).toBe('frontend,urgent');
+  });
+
+  it('updates startDate and tags', () => {
+    const item = repo.createItem({
+      projectId,
+      columnId,
+      title: 't',
+      creatorId: userId,
+      orderIndex: 0,
+    });
+    const updated = repo.updateItem(item.id, {
+      startDate: '2026-08-01',
+      tags: 'backend',
+    });
+    expect(updated?.startDate).toBe('2026-08-01');
+    expect(updated?.tags).toBe('backend');
+  });
+
+  it('defaults startDate and tags to null when omitted', () => {
+    const item = repo.createItem({
+      projectId,
+      columnId,
+      title: 't',
+      creatorId: userId,
+      orderIndex: 0,
+    });
+    expect(item.startDate).toBeNull();
+    expect(item.tags).toBeNull();
+  });
+
   it('isolates items by project', () => {
     const p2 = new ProjectRepository(db).create({
       name: 'P2',

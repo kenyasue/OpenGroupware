@@ -1,5 +1,10 @@
 import type { SqliteDatabase } from '@/lib/db/sqlite';
-import type { Milestone, MilestoneStatus, TodoItem } from '@/lib/types';
+import type {
+  Milestone,
+  MilestoneStatus,
+  TodoItem,
+  TodoPriority,
+} from '@/lib/types';
 
 interface MilestoneRow {
   id: number;
@@ -27,6 +32,7 @@ interface TodoItemRow {
   completed_at: string | null;
   order_index: number;
   milestone_id: number | null;
+  tags: string | null;
   created_at: string;
   updated_at: string;
   deleted_at: string | null;
@@ -55,12 +61,13 @@ function mapTodo(row: TodoItemRow): TodoItem {
     description: row.description,
     assigneeId: row.assignee_id,
     creatorId: row.creator_id,
-    priority: row.priority as never,
+    priority: row.priority as TodoPriority,
     startDate: row.start_date,
     dueDate: row.due_date,
     completedAt: row.completed_at,
     orderIndex: row.order_index,
     milestoneId: row.milestone_id,
+    tags: row.tags,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
     deletedAt: row.deleted_at,
