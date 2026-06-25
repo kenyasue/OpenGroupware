@@ -91,6 +91,7 @@ describe('MeetingService', () => {
       }).meeting;
       // 新しいミーティング(10:30-11:30)は重複
       const conflicts = service.checkScheduleConflicts(
+        authorId,
         projectId,
         [memberId],
         '2026-06-15T10:30:00',
@@ -109,6 +110,7 @@ describe('MeetingService', () => {
         memberIds: [memberId],
       });
       const conflicts = service.checkScheduleConflicts(
+        authorId,
         projectId,
         [memberId],
         '2026-06-15T11:00:00',
@@ -125,6 +127,7 @@ describe('MeetingService', () => {
         memberIds: [memberId],
       }).meeting;
       const conflicts = service.checkScheduleConflicts(
+        authorId,
         projectId,
         [memberId],
         '2026-06-15T10:30:00',
@@ -144,6 +147,7 @@ describe('MeetingService', () => {
         createdById: memberId,
       });
       const conflicts = service.checkScheduleConflicts(
+        authorId,
         projectId,
         [memberId],
         '2026-06-15T10:30:00',
@@ -169,6 +173,7 @@ describe('MeetingService', () => {
         orderIndex: 0,
       });
       const conflicts = service.checkScheduleConflicts(
+        authorId,
         projectId,
         [memberId],
         '2026-06-15T10:00:00',
@@ -194,6 +199,7 @@ describe('MeetingService', () => {
         orderIndex: 0,
       });
       const conflicts = service.checkScheduleConflicts(
+        authorId,
         projectId,
         [memberId],
         '2026-06-15T10:00:00',

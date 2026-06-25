@@ -31,6 +31,9 @@ export interface SearchOptions {
   type?: SearchResourceType;
 }
 
+// 検索は全件対象とする(ページネーション既定値による検索漏れを防ぐ)
+const SEARCH_MAX = Number.MAX_SAFE_INTEGER;
+
 /**
  * プロジェクト内の横断検索を担うService。
  * 各リソースを取得しキーワードで絞り込む(小規模データ前提)。
@@ -62,7 +65,10 @@ export class SearchService {
       !!text && text.toLowerCase().includes(q);
 
     if (!type || type === 'thread') {
-      for (const t of this.boardRepository.findThreads(projectId).items) {
+      for (const t of this.boardRepository.findThreads(projectId, {
+        page: 1,
+        pageSize: SEARCH_MAX,
+      }).items) {
         if (match(t.title) || match(t.bodyMd)) {
           results.push({
             type: 'thread',
@@ -74,7 +80,10 @@ export class SearchService {
       }
     }
     if (!type || type === 'chat') {
-      for (const m of this.chatRepository.findMessages(projectId).items) {
+      for (const m of this.chatRepository.findMessages(projectId, {
+        page: 1,
+        pageSize: SEARCH_MAX,
+      }).items) {
         if (match(m.body)) {
           results.push({
             type: 'chat',
@@ -101,7 +110,7 @@ export class SearchService {
       const files = this.fileRepository.findFilesByProject(
         projectId,
         1,
-        500
+        SEARCH_MAX
       ).items;
       for (const f of files) {
         if (match(f.originalName)) {
@@ -156,7 +165,10 @@ export class SearchService {
       }
     }
     if (!type || type === 'note') {
-      for (const n of this.noteRepository.findNotes(projectId).items) {
+      for (const n of this.noteRepository.findNotes(projectId, {
+        page: 1,
+        pageSize: SEARCH_MAX,
+      }).items) {
         if (match(n.title) || match(n.bodyMd) || match(n.tags)) {
           results.push({
             type: 'note',

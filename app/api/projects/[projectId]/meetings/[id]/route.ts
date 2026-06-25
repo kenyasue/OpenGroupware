@@ -61,6 +61,7 @@ export async function POST(
   const service = createMeetingService();
   try {
     const conflicts = service.checkScheduleConflicts(
+      user.id,
       Number(projectId),
       Array.isArray(body.memberIds) ? body.memberIds.map(Number) : [],
       String(body.startAt ?? ''),
