@@ -23,6 +23,8 @@ import { CalendarRepository } from '@/repositories/CalendarRepository';
 import { MilestoneRepository } from '@/repositories/MilestoneRepository';
 import { MeetingService } from '@/services/MeetingService';
 import { MeetingRepository } from '@/repositories/MeetingRepository';
+import { SearchService } from '@/services/SearchService';
+import { DashboardService } from '@/services/DashboardService';
 
 /**
  * Route Handler用に各Repository/Serviceを構築するファクトリ。
@@ -123,6 +125,46 @@ export function createMeetingService(): MeetingService {
     new ActivityLogService(new ActivityLogRepository(db)),
     getSseHub(),
     db
+  );
+}
+
+export function createSearchService(): SearchService {
+  const db = getDb();
+  return new SearchService(
+    new BoardRepository(db),
+    new ChatRepository(db),
+    new TodoRepository(db),
+    new FileRepository(db),
+    new CalendarRepository(db),
+    new MeetingRepository(db),
+    new MilestoneRepository(db),
+    new ProjectNoteRepository(db),
+    new ProjectMemberRepository(db)
+  );
+}
+
+export function createDashboardService(): DashboardService {
+  const db = getDb();
+  const memberRepo = new ProjectMemberRepository(db);
+  const scheduleService = new ScheduleService(
+    new CalendarRepository(db),
+    new MilestoneRepository(db),
+    new TodoRepository(db),
+    memberRepo,
+    new ActivityLogService(new ActivityLogRepository(db))
+  );
+  return new DashboardService(
+    new ProjectRepository(db),
+    new TodoRepository(db),
+    new ChatRepository(db),
+    new BoardRepository(db),
+    new ProjectNoteRepository(db),
+    new FileRepository(db),
+    new MeetingRepository(db),
+    new ActivityLogRepository(db),
+    new NotificationRepository(db),
+    memberRepo,
+    scheduleService
   );
 }
 
