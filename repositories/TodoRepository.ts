@@ -271,4 +271,21 @@ export class TodoRepository {
     );
     return result.changes > 0;
   }
+
+  /** 指定期間内に期限を迎える、指定担当者の高優先度ToDo(スケジュール重複判定用) */
+  findHighPriorityByAssignee(
+    projectId: number,
+    assigneeId: number,
+    from: string,
+    to: string
+  ): TodoItem[] {
+    const rows = this.db.query<TodoItemRow>(
+      `SELECT * FROM todo_items
+       WHERE project_id = @projectId AND assignee_id = @assigneeId
+         AND priority = 'high' AND deleted_at IS NULL
+         AND due_date IS NOT NULL AND due_date >= @from AND due_date <= @to`,
+      { projectId, assigneeId, from, to }
+    );
+    return rows.map(mapItem);
+  }
 }
