@@ -2,10 +2,47 @@
 
 ![OpenGroupware demo](docs/screenshots/demo.gif)
 
-A simple, self-contained, project-based groupware built with **Next.js 15**, **TypeScript**, and
-**SQLite**. It runs entirely on Node.js (no external database or storage) and provides boards,
-Markdown notes, realtime chat (SSE), a Kanban ToDo board, file sharing, a calendar with milestones,
-meetings with schedule-conflict detection, search, dashboards, and admin backups.
+OpenGroupware is a full-featured, self-contained, project-based groupware built with **Next.js 15**,
+**TypeScript**, and **SQLite**. It runs entirely on Node.js — no external database, cache, or object
+storage — and packs boards, realtime chat, a Kanban ToDo board, Markdown notes, file sharing, a
+calendar with milestones, meetings with schedule-conflict detection, search, dashboards,
+notifications, and admin backups into a single deployable app.
+
+> **Origin:** This project was built as a test of **GLM-5.2** with **OpenCode**. The vast majority of
+> the codebase was generated autonomously, without human interaction. Total usage: ~4M input tokens,
+> ~800K output tokens, ~**$82** in API cost.
+
+## Features
+
+- **Project workspaces** — multi-project, with member roles (admin / member / guest) and permission-checked access throughout
+- **Boards** — threaded discussions with Markdown, categories, pinning, important flags, and file/image attachments
+- **Realtime chat** — per-project SSE live messages with @mentions and attachments (auto-reconnect via `EventSource`)
+- **Kanban ToDo board** — drag-and-drop columns & cards, priorities, assignees, start/due dates, tags, milestones, and attachments
+- **Markdown notes** — pinned notes, tags, full search, and sanitized rendering
+- **File sharing** — uploads with a lightbox, library + attachment sources, and project-scoped storage
+- **Calendar** — month/week/day views with events linked to todos, milestones, and meetings
+- **Milestones** — due dates, status, and progress roll-up across todos
+- **Meetings** — agenda & minutes (Markdown), invited members, and schedule-conflict detection
+- **Search & dashboards** — cross-project search and a personal dashboard
+- **Notifications & activity log** — mentions, assignments, due-soon, and meeting invites, plus a per-project audit trail
+- **Admin tools** — one-click backup (SQLite DB + uploads → ZIP), download, and migration status (system_admin only)
+- **Auth** — bcrypt password hashing, stateless signed-cookie sessions, and system_admin / member roles
+- **PWA & mobile** — installable, responsive, with an offline shell
+- **Theme & i18n** — dark/light theme and English / Japanese UI
+
+## Tech Highlights
+
+- **Strict layered architecture** — `UI (app/) → Service (services/) → Repository (repositories/) → Data (lib/db/)`; one-way dependencies, SQL isolated in repositories
+- **Realtime via SSE** — a tiny in-memory `SseHub` (`lib/sse/hub.ts`) broadcasts events to per-project clients; services inject the hub and fire events on writes
+- **Custom SQL migration system** — `Migrator` (`lib/db/migrator.ts`) applies versioned `lib/db/migrations/NNN_*.sql` files in filename order, each in its own transaction and recorded in `schema_migrations` — no ORM, no external CLI
+- **SQLite wrapper** — `SqliteDatabase` centralizes `better-sqlite3` access with WAL mode, `foreign_keys = ON`, parameter binding, and transactions; repositories never touch the driver directly
+- **Stateless signed sessions** — `base64url(payload).base64url(hmacSha256(secret, payload))` cookies verified with `crypto.timingSafeEqual` and an `iat` expiry
+- **Playwright E2E tests** — `webServer` auto-runs `migrate && dev`, a `globalSetup` seeds the admin account, `workers: 1` for deterministic SSE; 15 specs cover every major user flow
+- **Vitest unit & integration tests** — 326 tests across 38 files using a real temporary SQLite DB per test, with an 80% coverage threshold on repositories and services
+- **Soft deletes everywhere** — `deleted_at IS NULL` filtering enforced in repository queries
+- **XSS-safe Markdown** — `react-markdown` + `remark-gfm` + `rehype-sanitize`; HTML and dangerous URL schemes are stripped
+- **Key algorithms, unit-tested** — schedule-conflict detection, milestone progress calculation, notification targeting, and session-token verification
+- **Spec-driven workflow** — opencode-driven design docs (`docs/`) and per-task steering files (`.steering/`) keep planning and implementation traceable
 
 The codebase follows a strict **layered architecture**:
 
