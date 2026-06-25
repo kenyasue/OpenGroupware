@@ -98,12 +98,19 @@ export function createChatService(): ChatService {
 
 export function createTodoService(): TodoService {
   const db = getDb();
+  const memberRepo = new ProjectMemberRepository(db);
   return new TodoService(
     new TodoRepository(db),
-    new ProjectMemberRepository(db),
+    memberRepo,
     new NotificationService(new NotificationRepository(db)),
     new ActivityLogService(new ActivityLogRepository(db)),
-    getSseHub()
+    getSseHub(),
+    new AttachmentService(
+      new AttachmentRepository(db),
+      new FileRepository(db),
+      memberRepo
+    ),
+    db
   );
 }
 

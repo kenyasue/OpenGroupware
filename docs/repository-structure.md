@@ -235,7 +235,7 @@ components/
 ├── project/             # ProjectCard, DashboardWidget
 ├── board/               # ThreadList, ThreadForm, CommentList
 ├── chat/                # ChatWindow, MessageInput, MessageList
-├── todo/                # KanbanBoard, KanbanColumn, TodoCard
+├── todo/                # KanbanBoard, TodoDialog
 ├── files/               # FileList, Uploader, Lightbox, AttachmentList, AttachmentPicker
 ├── calendar/            # CalendarView, MonthView, WeekView, DayView, EventDetailDialog, CalendarEventForm
 ├── meetings/            # MeetingForm, ConflictWarning

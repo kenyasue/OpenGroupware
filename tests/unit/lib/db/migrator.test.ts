@@ -182,6 +182,7 @@ describe('Migrator', () => {
     expect(migrator.getAppliedMigrations().map((m) => m.filename)).toEqual([
       '001_initial.sql',
       '002_attachments.sql',
+      '003_todo_tags.sql',
     ]);
   });
 });

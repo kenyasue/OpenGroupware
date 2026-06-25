@@ -31,6 +31,7 @@ export default async function TodosPage({
   const todoService = createTodoService();
   const columns = todoService.getColumns(user.id, project.id);
   const items = todoService.getItems(user.id, project.id);
+  const members = projectService.getMembers(user.id, project.id);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -42,6 +43,7 @@ export default async function TodosPage({
           projectId={project.id}
           columns={columns}
           initialItems={items}
+          members={members}
         />
       </main>
     </div>

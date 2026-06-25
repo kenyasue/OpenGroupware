@@ -38,6 +38,11 @@ export async function POST(
   }
   const service = createTodoService();
   try {
+    const fileIds = Array.isArray(body.fileIds)
+      ? body.fileIds
+          .map((n) => Number(n))
+          .filter((n) => Number.isFinite(n) && n > 0)
+      : [];
     const item = service.createItem(user.id, Number(projectId), {
       title: String(body.title ?? ''),
       columnId: Number(body.columnId ?? 0),
@@ -51,7 +56,11 @@ export async function POST(
         typeof body.priority === 'string'
           ? (body.priority as 'low' | 'normal' | 'high')
           : undefined,
+      startDate:
+        typeof body.startDate === 'string' ? body.startDate : undefined,
       dueDate: typeof body.dueDate === 'string' ? body.dueDate : null,
+      tags: typeof body.tags === 'string' ? body.tags : undefined,
+      fileIds,
     });
     return NextResponse.json({ item }, { status: 201 });
   } catch (error) {

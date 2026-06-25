@@ -127,6 +127,7 @@ export interface TodoItem {
   completedAt: string | null;
   orderIndex: number;
   milestoneId: number | null;
+  tags: string | null;
   createdAt: string;
   updatedAt: string;
   deletedAt: string | null;
@@ -153,7 +154,8 @@ export type FileAssetSource = 'library' | 'attachment';
 export type AttachmentTargetType =
   | 'chat_message'
   | 'board_thread'
-  | 'board_comment';
+  | 'board_comment'
+  | 'todo_item';
 
 /** attachments エンティティ。 */
 export interface Attachment {

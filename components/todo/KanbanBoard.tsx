@@ -2,6 +2,8 @@
 
 import { useCallback, useState, type DragEvent } from 'react';
 import type { TodoColumn, TodoItem } from '@/lib/types';
+import type { ProjectMemberWithUser } from '@/repositories/ProjectMemberRepository';
+import { TodoDialog } from '@/components/todo/TodoDialog';
 
 const PRIORITY_COLORS: Record<string, string> = {
   high: 'bg-red-100 text-red-700',
@@ -13,13 +15,16 @@ export function KanbanBoard({
   projectId,
   columns,
   initialItems,
+  members,
 }: {
   projectId: number;
   columns: TodoColumn[];
   initialItems: TodoItem[];
+  members: ProjectMemberWithUser[];
 }) {
   const [items, setItems] = useState<TodoItem[]>(initialItems);
   const [draggingId, setDraggingId] = useState<number | null>(null);
+  const [selectedItem, setSelectedItem] = useState<TodoItem | null>(null);
 
   const reload = useCallback(async () => {
     const res = await fetch(`/api/projects/${projectId}/todos/items`);
@@ -44,7 +49,7 @@ export function KanbanBoard({
       setDraggingId(null);
       return;
     }
-    // 楽観的にローカル更新したあとAPIで移動
+    // 楽観的にローカル更新したあとAPIで移動(失敗時は再取得で巻き戻す)
     setItems((prev) =>
       prev.map((i) => (i.id === itemId ? { ...i, columnId: column.id } : i))
     );
@@ -52,7 +57,9 @@ export function KanbanBoard({
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ columnId: column.id, orderIndex: 0 }),
-    }).then(() => reload());
+    })
+      .catch(() => undefined)
+      .finally(() => reload());
     setDraggingId(null);
   }
 
@@ -91,48 +98,99 @@ export function KanbanBoard({
               {column.name} ({colItems.length})
             </h2>
             <ul className="space-y-2">
-              {colItems.map((item) => (
-                <li
-                  key={item.id}
-                  draggable
-                  onDragStart={(e) => onDragStart(e, item.id)}
-                  className={`cursor-grab rounded border bg-white p-2 shadow-sm ${
-                    draggingId === item.id ? 'opacity-50' : ''
-                  } ${item.completedAt ? 'opacity-60 line-through' : ''}`}
-                  data-testid={`todo-card-${item.id}`}
-                >
-                  <div className="flex items-start justify-between gap-2">
-                    <span className="text-sm">{item.title}</span>
-                    <button
-                      type="button"
-                      onClick={() => toggleComplete(item.id)}
-                      className="text-xs text-blue-600 hover:underline"
-                      data-testid={`todo-complete-${item.id}`}
-                    >
-                      {item.completedAt ? '戻す' : '完了'}
-                    </button>
-                  </div>
-                  <div className="mt-1 flex gap-1">
-                    <span
-                      className={`rounded px-1.5 py-0.5 text-xs ${
-                        PRIORITY_COLORS[item.priority] ?? PRIORITY_COLORS.normal
-                      }`}
-                    >
-                      {item.priority}
-                    </span>
-                    {item.dueDate && (
-                      <span className="text-xs text-gray-500">
-                        期限: {item.dueDate}
+              {colItems.map((item) => {
+                const tags = item.tags
+                  ?.split(',')
+                  .map((t) => t.trim())
+                  .filter(Boolean);
+                const assignee = members.find(
+                  (m) => m.user.id === item.assigneeId
+                );
+                return (
+                  <li
+                    key={item.id}
+                    draggable
+                    onDragStart={(e) => onDragStart(e, item.id)}
+                    onClick={() => setSelectedItem(item)}
+                    className={`cursor-grab rounded border bg-white p-2 shadow-sm ${
+                      draggingId === item.id ? 'opacity-50' : ''
+                    } ${item.completedAt ? 'opacity-60 line-through' : ''}`}
+                    data-testid={`todo-card-${item.id}`}
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <span
+                        className="text-sm hover:text-blue-600 hover:underline"
+                        data-testid={`todo-open-${item.id}`}
+                      >
+                        {item.title}
                       </span>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleComplete(item.id);
+                        }}
+                        className="text-xs text-blue-600 hover:underline"
+                        data-testid={`todo-complete-${item.id}`}
+                      >
+                        {item.completedAt ? '戻す' : '完了'}
+                      </button>
+                    </div>
+                    <div className="mt-1 flex flex-wrap items-center gap-1">
+                      <span
+                        className={`rounded px-1.5 py-0.5 text-xs ${
+                          PRIORITY_COLORS[item.priority] ??
+                          PRIORITY_COLORS.normal
+                        }`}
+                      >
+                        {item.priority}
+                      </span>
+                      {item.dueDate && (
+                        <span className="text-xs text-gray-500">
+                          期限: {item.dueDate}
+                        </span>
+                      )}
+                      {item.startDate && (
+                        <span className="text-xs text-gray-400">
+                          開始: {item.startDate}
+                        </span>
+                      )}
+                      {assignee && (
+                        <span className="text-xs text-gray-500">
+                          @{assignee.user.name}
+                        </span>
+                      )}
+                    </div>
+                    {tags && tags.length > 0 && (
+                      <div className="mt-1 flex flex-wrap gap-1">
+                        {tags.map((t) => (
+                          <span
+                            key={t}
+                            className="rounded bg-gray-100 px-1.5 py-0.5 text-[10px] text-gray-600"
+                          >
+                            {t}
+                          </span>
+                        ))}
+                      </div>
                     )}
-                  </div>
-                </li>
-              ))}
+                  </li>
+                );
+              })}
             </ul>
             <NewTaskInput onAdd={(title) => addTask(column.id, title)} />
           </section>
         );
       })}
+
+      {selectedItem && (
+        <TodoDialog
+          projectId={projectId}
+          item={selectedItem}
+          members={members}
+          onClose={() => setSelectedItem(null)}
+          onSaved={reload}
+        />
+      )}
     </div>
   );
 }

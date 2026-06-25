@@ -24,6 +24,7 @@ interface TodoItemRow {
   completed_at: string | null;
   order_index: number;
   milestone_id: number | null;
+  tags: string | null;
   created_at: string;
   updated_at: string;
   deleted_at: string | null;
@@ -55,6 +56,7 @@ function mapItem(row: TodoItemRow): TodoItem {
     completedAt: row.completed_at,
     orderIndex: row.order_index,
     milestoneId: row.milestone_id,
+    tags: row.tags,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
     deletedAt: row.deleted_at,
@@ -75,7 +77,9 @@ export interface CreateItemInput {
   description?: string | null;
   assigneeId?: number | null;
   priority?: TodoPriority;
+  startDate?: string | null;
   dueDate?: string | null;
+  tags?: string | null;
   orderIndex: number;
 }
 
@@ -84,7 +88,9 @@ export interface UpdateItemInput {
   description?: string | null;
   assigneeId?: number | null;
   priority?: TodoPriority;
+  startDate?: string | null;
   dueDate?: string | null;
+  tags?: string | null;
   completedAt?: string | null;
   columnId?: number;
   orderIndex?: number;
@@ -193,8 +199,8 @@ export class TodoRepository {
   createItem(input: CreateItemInput): TodoItem {
     const now = new Date().toISOString();
     const result = this.db.execute(
-      `INSERT INTO todo_items (project_id, column_id, title, description, assignee_id, creator_id, priority, start_date, due_date, completed_at, order_index, milestone_id, created_at, updated_at, deleted_at)
-       VALUES (@projectId, @columnId, @title, @description, @assigneeId, @creatorId, @priority, NULL, @dueDate, NULL, @orderIndex, @milestoneId, @createdAt, @updatedAt, NULL)`,
+      `INSERT INTO todo_items (project_id, column_id, title, description, assignee_id, creator_id, priority, start_date, due_date, completed_at, order_index, milestone_id, tags, created_at, updated_at, deleted_at)
+       VALUES (@projectId, @columnId, @title, @description, @assigneeId, @creatorId, @priority, @startDate, @dueDate, NULL, @orderIndex, @milestoneId, @tags, @createdAt, @updatedAt, NULL)`,
       {
         projectId: input.projectId,
         columnId: input.columnId,
@@ -203,9 +209,11 @@ export class TodoRepository {
         assigneeId: input.assigneeId ?? null,
         creatorId: input.creatorId,
         priority: input.priority ?? 'normal',
+        startDate: input.startDate ?? null,
         dueDate: input.dueDate ?? null,
         orderIndex: input.orderIndex,
         milestoneId: null,
+        tags: input.tags ?? null,
         createdAt: now,
         updatedAt: now,
       }
@@ -237,9 +245,17 @@ export class TodoRepository {
       fields.push('priority = @priority');
       params.priority = input.priority;
     }
+    if (input.startDate !== undefined) {
+      fields.push('start_date = @startDate');
+      params.startDate = input.startDate;
+    }
     if (input.dueDate !== undefined) {
       fields.push('due_date = @dueDate');
       params.dueDate = input.dueDate;
+    }
+    if (input.tags !== undefined) {
+      fields.push('tags = @tags');
+      params.tags = input.tags;
     }
     if (input.completedAt !== undefined) {
       fields.push('completed_at = @completedAt');

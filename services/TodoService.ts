@@ -2,9 +2,16 @@ import { TodoRepository } from '@/repositories/TodoRepository';
 import { ProjectMemberRepository } from '@/repositories/ProjectMemberRepository';
 import { NotificationService } from '@/services/NotificationService';
 import { ActivityLogService } from '@/services/ActivityLogService';
+import { AttachmentService } from '@/services/AttachmentService';
 import { SseHub } from '@/lib/sse/hub';
+import type { SqliteDatabase } from '@/lib/db/sqlite';
 import { ForbiddenError, NotFoundError, ValidationError } from '@/lib/errors';
-import type { TodoColumn, TodoItem, TodoPriority } from '@/lib/types';
+import type {
+  AttachmentView,
+  TodoColumn,
+  TodoItem,
+  TodoPriority,
+} from '@/lib/types';
 
 const STANDARD_COLUMNS = ['Backlog', 'To Do', 'In Progress', 'Review', 'Done'];
 const VALID_PRIORITIES: TodoPriority[] = ['low', 'normal', 'high'];
@@ -15,7 +22,10 @@ export interface CreateItemInput {
   description?: string;
   assigneeId?: number | null;
   priority?: TodoPriority;
+  startDate?: string | null;
   dueDate?: string | null;
+  tags?: string | null;
+  fileIds?: number[];
 }
 
 export interface UpdateItemRequest {
@@ -23,16 +33,20 @@ export interface UpdateItemRequest {
   description?: string | null;
   assigneeId?: number | null;
   priority?: TodoPriority;
+  startDate?: string | null;
   dueDate?: string | null;
+  tags?: string | null;
   columnId?: number;
   orderIndex?: number;
   milestoneId?: number | null;
+  fileIds?: number[];
 }
 
 /**
  * ToDo/Kanbanの業務ロジックを担うService。
  * 標準カラム初期生成、権限チェック、タスクCRUD/移動/完了、
- * 担当者割当時の通知(todo_assigned)とアクティビティログ(todo_*)、SSE配信を行う。
+ * 担当者割当時の通知(todo_assigned)とアクティビティログ(todo_*)、
+ * 添付ファイル紐付け、SSE配信を行う。
  */
 export class TodoService {
   constructor(
@@ -40,7 +54,9 @@ export class TodoService {
     private readonly projectMemberRepository: ProjectMemberRepository,
     private readonly notificationService: NotificationService,
     private readonly activityLogService: ActivityLogService,
-    private readonly sseHub: SseHub
+    private readonly sseHub: SseHub,
+    private readonly attachmentService: AttachmentService,
+    private readonly db: SqliteDatabase
   ) {}
 
   getColumns(actorId: number, projectId: number): TodoColumn[] {
@@ -119,20 +135,33 @@ export class TodoService {
     if (input.priority && !VALID_PRIORITIES.includes(input.priority)) {
       throw new ValidationError('無効な優先度です', 'priority');
     }
-    const orderIndex =
-      input.columnId !== undefined
-        ? this.todoRepository.maxItemOrderIndex(input.columnId) + 1
-        : 0;
-    const item = this.todoRepository.createItem({
-      projectId,
-      columnId: input.columnId,
-      title: input.title,
-      creatorId: actorId,
-      description: input.description ?? null,
-      assigneeId: input.assigneeId ?? null,
-      priority: input.priority,
-      dueDate: input.dueDate ?? null,
-      orderIndex,
+    // タスク本体と添付紐付けはトランザクション内で一貫保存する
+    const item = this.db.transaction(() => {
+      const orderIndex =
+        this.todoRepository.maxItemOrderIndex(input.columnId) + 1;
+      const created = this.todoRepository.createItem({
+        projectId,
+        columnId: input.columnId,
+        title: input.title,
+        creatorId: actorId,
+        description: input.description ?? null,
+        assigneeId: input.assigneeId ?? null,
+        priority: input.priority,
+        startDate: input.startDate ?? null,
+        dueDate: input.dueDate ?? null,
+        tags: input.tags ?? null,
+        orderIndex,
+      });
+      if (input.fileIds && input.fileIds.length > 0) {
+        this.attachmentService.attach(
+          actorId,
+          projectId,
+          'todo_item',
+          created.id,
+          input.fileIds
+        );
+      }
+      return created;
     });
 
     if (input.assigneeId && input.assigneeId !== actorId) {
@@ -155,7 +184,19 @@ export class TodoService {
       throw new ValidationError('無効な優先度です', 'priority');
     }
     const previousAssignee = item.assigneeId;
-    const updated = this.todoRepository.updateItem(itemId, input);
+    const updated = this.db.transaction(() => {
+      const u = this.todoRepository.updateItem(itemId, input);
+      if (u && input.fileIds && input.fileIds.length > 0) {
+        this.attachmentService.attach(
+          actorId,
+          item.projectId,
+          'todo_item',
+          itemId,
+          input.fileIds
+        );
+      }
+      return u;
+    });
     if (!updated) throw new NotFoundError('TodoItem', itemId);
 
     if (
@@ -220,8 +261,27 @@ export class TodoService {
     if (item.creatorId !== actorId && role !== 'admin') {
       throw new ForbiddenError('作成者または管理者のみ削除できます');
     }
-    this.todoRepository.deleteItem(itemId);
+    this.db.transaction(() => {
+      this.attachmentService.detach('todo_item', itemId);
+      this.todoRepository.deleteItem(itemId);
+    });
     this.broadcastTodo(item.projectId);
+  }
+
+  /** 単一のToDoアイテムを取得(メンバーシップチェック付き)。 */
+  getItem(actorId: number, itemId: number): TodoItem {
+    const item = this.todoRepository.findItemById(itemId);
+    if (!item) throw new NotFoundError('TodoItem', itemId);
+    this.requireMember(item.projectId, actorId);
+    return item;
+  }
+
+  /** ToDoに紐付く添付ファイル一覧を取得(メンバーシップチェック付き)。 */
+  getItemAttachments(actorId: number, itemId: number): AttachmentView[] {
+    const item = this.todoRepository.findItemById(itemId);
+    if (!item) throw new NotFoundError('TodoItem', itemId);
+    this.requireMember(item.projectId, actorId);
+    return this.attachmentService.listViews('todo_item', itemId);
   }
 
   private requireMember(projectId: number, actorId: number): void {

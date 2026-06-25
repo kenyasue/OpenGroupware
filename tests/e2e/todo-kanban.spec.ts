@@ -76,4 +76,99 @@ test.describe('todo / kanban', () => {
       page.getByTestId(`kanban-column-${done.id}`).getByText(title)
     ).toBeVisible();
   });
+
+  test('edit dialog shows and persists metadata + file attachments', async ({
+    page,
+  }) => {
+    const projectId = await setupOwner(page);
+
+    const colsRes = await page.request.get(
+      `/api/projects/${projectId}/todos/columns`
+    );
+    const cols = (
+      (await colsRes.json()) as { columns: { id: number; name: string }[] }
+    ).columns;
+    const backlog = cols.find((c) => c.name === 'Backlog')!;
+
+    // オーナー(担当者候補)のuser idを取得
+    const members = (
+      (await (
+        await page.request.get(`/api/projects/${projectId}/members`)
+      ).json()) as { members: { user: { id: number; name: string } }[] }
+    ).members;
+    const ownerId = members[0].user.id;
+
+    // タスク作成(API)
+    const title = unique('Task');
+    const createRes = await page.request.post(
+      `/api/projects/${projectId}/todos/items`,
+      { data: { title, columnId: backlog.id } }
+    );
+    const { item } = (await createRes.json()) as { item: { id: number } };
+
+    // 添付ファイル(1x1 PNG)をアップロード
+    const png = Buffer.from(
+      'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=',
+      'base64'
+    );
+    const upRes = await page.request.post(
+      `/api/projects/${projectId}/attachments`,
+      {
+        multipart: {
+          file: { name: 'pic.png', mimeType: 'image/png', buffer: png },
+        },
+      }
+    );
+    expect(upRes.ok()).toBeTruthy();
+    const { file } = (await upRes.json()) as { file: { id: number } };
+
+    // ダイアログを開いてメタデータを編集
+    await page.goto(`/projects/${projectId}/todos`);
+    await page.getByTestId(`todo-card-${item.id}`).click();
+    await expect(page.getByTestId('todo-dialog')).toBeVisible();
+    await page.getByTestId('todo-description').fill('detailed desc');
+    await page.getByTestId('todo-tags').fill('frontend, urgent');
+    await page.getByTestId('todo-start-date').fill('2026-07-01');
+    await page.getByTestId('todo-due-date').fill('2026-07-31');
+    await page.getByTestId('todo-assignee').selectOption(String(ownerId));
+    await page.getByTestId('todo-save').click();
+    await expect(page.getByTestId('todo-dialog')).toBeHidden();
+
+    // カードにタグが表示される
+    await expect(page.getByText('frontend')).toBeVisible();
+
+    // APIでファイルを添付付け
+    const attachRes = await page.request.patch(
+      `/api/projects/${projectId}/todos/items/${item.id}`,
+      { data: { fileIds: [file.id] } }
+    );
+    expect(attachRes.ok()).toBeTruthy();
+
+    // GET でアイテム+添付が取得できる
+    const getRes = await page.request.get(
+      `/api/projects/${projectId}/todos/items/${item.id}`
+    );
+    const body = (await getRes.json()) as {
+      item: {
+        description: string;
+        tags: string;
+        startDate: string;
+        dueDate: string;
+        assigneeId: number;
+      };
+      attachments: { fileId: number }[];
+    };
+    expect(body.item.description).toBe('detailed desc');
+    expect(body.item.tags).toBe('frontend, urgent');
+    expect(body.item.startDate).toBe('2026-07-01');
+    expect(body.item.dueDate).toBe('2026-07-31');
+    expect(body.item.assigneeId).toBe(ownerId);
+    expect(body.attachments).toHaveLength(1);
+
+    // ダイアログ再オープンで添付画像が表示される
+    await page.reload();
+    await page.getByTestId(`todo-card-${item.id}`).click();
+    await expect(page.getByTestId('todo-dialog')).toBeVisible();
+    await expect(page.getByTestId('attachment-list')).toBeVisible();
+  });
 });
