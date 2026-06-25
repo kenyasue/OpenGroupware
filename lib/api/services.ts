@@ -18,6 +18,9 @@ import { TodoService } from '@/services/TodoService';
 import { TodoRepository } from '@/repositories/TodoRepository';
 import { FileStorageService } from '@/services/FileStorageService';
 import { FileRepository } from '@/repositories/FileRepository';
+import { ScheduleService } from '@/services/ScheduleService';
+import { CalendarRepository } from '@/repositories/CalendarRepository';
+import { MilestoneRepository } from '@/repositories/MilestoneRepository';
 
 /**
  * Route Handler用に各Repository/Serviceを構築するファクトリ。
@@ -93,6 +96,17 @@ export function createFileStorageService(): FileStorageService {
     new ActivityLogService(new ActivityLogRepository(db)),
     getSseHub(),
     uploadsDir
+  );
+}
+
+export function createScheduleService(): ScheduleService {
+  const db = getDb();
+  return new ScheduleService(
+    new CalendarRepository(db),
+    new MilestoneRepository(db),
+    new TodoRepository(db),
+    new ProjectMemberRepository(db),
+    new ActivityLogService(new ActivityLogRepository(db))
   );
 }
 
