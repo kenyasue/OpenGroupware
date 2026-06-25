@@ -235,6 +235,45 @@ export class TodoService {
     return updated;
   }
 
+  /**
+   * 指定カラム内のアイテム順序を itemIds の順で再採番する。
+   * 同一カラムの並べ替えだけでなく、別カラムからの移動(対象カラムへの挿入)にも使う。
+   * すべて同一プロジェクト内であることを検証し、1トランザクションで更新する。
+   */
+  reorderItems(
+    actorId: number,
+    projectId: number,
+    columnId: number,
+    itemIds: number[]
+  ): TodoItem[] {
+    this.requireMember(projectId, actorId);
+    const column = this.todoRepository.findColumnById(columnId);
+    if (!column || column.projectId !== projectId) {
+      throw new NotFoundError('TodoColumn', columnId);
+    }
+    const ids = Array.isArray(itemIds) ? itemIds : [];
+    if (ids.length === 0) {
+      // 空の並べ替えは何も変更せず、SSE/ログも出さない
+      return this.todoRepository
+        .findItemsByProject(projectId)
+        .filter((i) => i.columnId === columnId);
+    }
+    this.db.transaction(() => {
+      ids.forEach((id, idx) => {
+        const item = this.todoRepository.findItemById(id);
+        if (!item || item.projectId !== projectId) {
+          throw new NotFoundError('TodoItem', id);
+        }
+        this.todoRepository.updateItem(id, { columnId, orderIndex: idx });
+      });
+    });
+    this.logTodo(projectId, actorId, 'todo_updated', ids[0]);
+    this.broadcastTodo(projectId);
+    return this.todoRepository
+      .findItemsByProject(projectId)
+      .filter((i) => i.columnId === columnId);
+  }
+
   toggleComplete(actorId: number, itemId: number): TodoItem {
     const item = this.todoRepository.findItemById(itemId);
     if (!item) throw new NotFoundError('TodoItem', itemId);

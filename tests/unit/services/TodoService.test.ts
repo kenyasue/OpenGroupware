@@ -308,4 +308,77 @@ describe('TodoService', () => {
     expect(cleared.tags).toBeNull();
     expect(cleared.assigneeId).toBeNull();
   });
+
+  describe('reorderItems', () => {
+    it('renumbers items within a column in the given order', () => {
+      const cols = service.getColumns(authorId, projectId);
+      const col = cols[0];
+      const a = service.createItem(authorId, projectId, {
+        title: 'A',
+        columnId: col.id,
+      });
+      const b = service.createItem(authorId, projectId, {
+        title: 'B',
+        columnId: col.id,
+      });
+      const c = service.createItem(authorId, projectId, {
+        title: 'C',
+        columnId: col.id,
+      });
+      // 逆順に並べ替え
+      const result = service.reorderItems(authorId, projectId, col.id, [
+        c.id,
+        b.id,
+        a.id,
+      ]);
+      expect(result.map((i) => i.title)).toEqual(['C', 'B', 'A']);
+      expect(result.map((i) => i.orderIndex)).toEqual([0, 1, 2]);
+    });
+
+    it('moves an item from another column into the target position', () => {
+      const cols = service.getColumns(authorId, projectId);
+      const src = cols[0];
+      const dest = cols[1];
+      const a = service.createItem(authorId, projectId, {
+        title: 'A',
+        columnId: dest.id,
+      });
+      const b = service.createItem(authorId, projectId, {
+        title: 'B',
+        columnId: dest.id,
+      });
+      const x = service.createItem(authorId, projectId, {
+        title: 'X',
+        columnId: src.id,
+      });
+      // X を A と B の間に挿入
+      service.reorderItems(authorId, projectId, dest.id, [a.id, x.id, b.id]);
+      const destItems = service
+        .getItems(authorId, projectId)
+        .filter((i) => i.columnId === dest.id);
+      expect(destItems.map((i) => i.title)).toEqual(['A', 'X', 'B']);
+      // X は元のカラムからいなくなる
+      const srcItems = service
+        .getItems(authorId, projectId)
+        .filter((i) => i.columnId === src.id);
+      expect(srcItems.find((i) => i.id === x.id)).toBeUndefined();
+    });
+
+    it('forbids a non-member from reordering', () => {
+      const col = service.getColumns(authorId, projectId)[0];
+      expect(() =>
+        service.reorderItems(outsiderId, projectId, col.id, [])
+      ).toThrow(ForbiddenError);
+    });
+
+    it('rejects an unknown column or item', () => {
+      const col = service.getColumns(authorId, projectId)[0];
+      expect(() =>
+        service.reorderItems(authorId, projectId, 99999, [])
+      ).toThrow(NotFoundError);
+      expect(() =>
+        service.reorderItems(authorId, projectId, col.id, [99999])
+      ).toThrow(NotFoundError);
+    });
+  });
 });

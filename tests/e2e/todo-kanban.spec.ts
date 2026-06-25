@@ -171,4 +171,58 @@ test.describe('todo / kanban', () => {
     await expect(page.getByTestId('todo-dialog')).toBeVisible();
     await expect(page.getByTestId('attachment-list')).toBeVisible();
   });
+
+  test('reorder cards within a column by drag and drop and persist', async ({
+    page,
+  }) => {
+    const projectId = await setupOwner(page);
+    const colsRes = await page.request.get(
+      `/api/projects/${projectId}/todos/columns`
+    );
+    const cols = (
+      (await colsRes.json()) as { columns: { id: number; name: string }[] }
+    ).columns;
+    const backlog = cols.find((c) => c.name === 'Backlog')!;
+
+    // 3 つのタスクを Backlog に作成(作成順 A, B, C)
+    const titles = ['Task-A', 'Task-B', 'Task-C'];
+    const ids: number[] = [];
+    for (const title of titles) {
+      const res = await page.request.post(
+        `/api/projects/${projectId}/todos/items`,
+        { data: { title, columnId: backlog.id } }
+      );
+      const { item } = (await res.json()) as { item: { id: number } };
+      ids.push(item.id);
+    }
+    const [aId, bId, cId] = ids;
+
+    await page.goto(`/projects/${projectId}/todos`);
+    const col = page.getByTestId(`kanban-column-${backlog.id}`);
+
+    async function orderIds(): Promise<number[]> {
+      return col
+        .locator('[data-testid^="todo-open-"]')
+        .evaluateAll((els) =>
+          els.map((e) => Number(e.getAttribute('data-testid')!.slice(10)))
+        );
+    }
+
+    await expect(col.getByTestId(`todo-card-${cId}`)).toBeVisible();
+    // C を A の上にドラッグ(前へ挿入) -> 順序は C, A, B
+    await page
+      .getByTestId(`todo-card-${cId}`)
+      .dragTo(page.getByTestId(`todo-card-${aId}`), {
+        targetPosition: { x: 10, y: 2 },
+      });
+
+    await expect
+      .poll(async () => (await orderIds())[0], { timeout: 10_000 })
+      .toBe(cId);
+    expect(await orderIds()).toEqual([cId, aId, bId]);
+
+    // リロード後も順序が維持される
+    await page.reload();
+    expect(await orderIds()).toEqual([cId, aId, bId]);
+  });
 });
