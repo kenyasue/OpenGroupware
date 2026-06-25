@@ -75,6 +75,7 @@ export class MeetingService {
     this.requireMember(projectId, actorId);
     this.validate(input);
     const conflicts = this.checkScheduleConflicts(
+      actorId,
       projectId,
       input.memberIds,
       input.startAt,
@@ -175,12 +176,14 @@ export class MeetingService {
    * 重複は警告(作成ブロックしない)。時間重複 = NOT(existing.end <= new.start OR existing.start >= new.end)
    */
   checkScheduleConflicts(
+    actorId: number,
     projectId: number,
     memberIds: number[],
     startAt: string,
     endAt: string,
     excludeMeetingId?: number
   ): ScheduleConflict[] {
+    this.requireMember(projectId, actorId);
     const conflicts: ScheduleConflict[] = [];
     const newStart = new Date(startAt).getTime();
     const newEnd = new Date(endAt).getTime();
