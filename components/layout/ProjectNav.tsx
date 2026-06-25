@@ -1,18 +1,23 @@
-const NAV_ITEMS = [
-  { href: '', label: '概要' },
-  { href: '/board', label: '掲示板' },
-  { href: '/notes', label: 'メモ' },
-  { href: '/chat', label: 'チャット' },
-  { href: '/todos', label: 'ToDo' },
-  { href: '/files', label: 'ファイル' },
-  { href: '/calendar', label: 'カレンダー' },
-  { href: '/milestones', label: 'マイルストーン' },
-  { href: '/meetings', label: 'ミーティング' },
-  { href: '/search', label: '検索' },
-  { href: '/members', label: 'メンバー' },
-  { href: '/activity', label: 'アクティビティ' },
-  { href: '/settings', label: '設定' },
-] as const;
+'use client';
+
+import { useI18n } from '@/lib/i18n/I18nProvider';
+import type { MessageKey } from '@/lib/i18n/dictionary';
+
+const NAV_ITEMS: { href: string; key: MessageKey; activeKey: string }[] = [
+  { href: '', key: 'nav.overview', activeKey: 'overview' },
+  { href: '/board', key: 'nav.board', activeKey: 'board' },
+  { href: '/notes', key: 'nav.notes', activeKey: 'notes' },
+  { href: '/chat', key: 'nav.chat', activeKey: 'chat' },
+  { href: '/todos', key: 'nav.todos', activeKey: 'todos' },
+  { href: '/files', key: 'nav.files', activeKey: 'files' },
+  { href: '/calendar', key: 'nav.calendar', activeKey: 'calendar' },
+  { href: '/milestones', key: 'nav.milestones', activeKey: 'milestones' },
+  { href: '/meetings', key: 'nav.meetings', activeKey: 'meetings' },
+  { href: '/search', key: 'nav.search', activeKey: 'search' },
+  { href: '/members', key: 'nav.members', activeKey: 'members' },
+  { href: '/activity', key: 'nav.activity', activeKey: 'activity' },
+  { href: '/settings', key: 'nav.settings', activeKey: 'settings' },
+];
 
 /**
  * プロジェクト内サブナビゲーション。
@@ -38,38 +43,23 @@ export function ProjectNav({
     | 'activity'
     | 'settings';
 }) {
-  const activeMap: Record<string, boolean> = {
-    overview: active === 'overview',
-    board: active === 'board',
-    notes: active === 'notes',
-    chat: active === 'chat',
-    todos: active === 'todos',
-    files: active === 'files',
-    calendar: active === 'calendar',
-    milestones: active === 'milestones',
-    meetings: active === 'meetings',
-    search: active === 'search',
-    members: active === 'members',
-    activity: active === 'activity',
-    settings: active === 'settings',
-  };
+  const { t } = useI18n();
 
   return (
-    <nav className="flex gap-4 border-b bg-white px-6 py-2 text-sm">
+    <nav className="flex gap-4 border-b bg-white px-6 py-2 text-sm dark:border-gray-700 dark:bg-gray-800">
       {NAV_ITEMS.map((item) => {
-        const key = item.href === '' ? 'overview' : item.href.slice(1);
         const href = `/projects/${projectId}${item.href}`;
         return (
           <a
             key={item.href}
             href={href}
             className={
-              activeMap[key]
-                ? 'font-medium text-blue-600'
-                : 'text-gray-600 hover:underline'
+              active === item.activeKey
+                ? 'font-medium text-blue-600 dark:text-blue-400'
+                : 'text-gray-600 hover:underline dark:text-gray-300'
             }
           >
-            {item.label}
+            {t(item.key)}
           </a>
         );
       })}

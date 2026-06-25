@@ -183,6 +183,7 @@ describe('Migrator', () => {
       '001_initial.sql',
       '002_attachments.sql',
       '003_todo_tags.sql',
+      '004_user_prefs.sql',
     ]);
   });
 });

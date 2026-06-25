@@ -38,7 +38,7 @@ export default async function NotesPage({
   });
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <Header user={toPublicUser(user)} />
       <ProjectNav projectId={project.id} active="notes" />
       <main className="mx-auto max-w-3xl space-y-6 p-6">
@@ -46,24 +46,30 @@ export default async function NotesPage({
         <NoteForm projectId={project.id} />
         <section className="space-y-3">
           {items.length === 0 ? (
-            <p className="text-sm text-gray-400">メモはありません。</p>
+            <p className="text-sm text-gray-400 dark:text-gray-500">
+              メモはありません。
+            </p>
           ) : (
             items.map((note) => (
               <a
                 key={note.id}
                 href={`/projects/${project.id}/notes/${note.id}`}
-                className="block rounded-lg border bg-white p-4 shadow-sm hover:shadow-md"
+                className="block rounded-lg border bg-white dark:bg-gray-800 p-4 shadow-sm hover:shadow-md"
               >
                 <div className="flex items-center justify-between">
-                  <h3 className="font-semibold text-gray-800">
+                  <h3 className="font-semibold text-gray-800 dark:text-gray-100">
                     {note.isPinned === 1 && '📌 '}
                     {note.title}
                   </h3>
                   {note.tags && (
-                    <span className="text-xs text-gray-500">{note.tags}</span>
+                    <span className="text-xs text-gray-500 dark:text-gray-400">
+                      {note.tags}
+                    </span>
                   )}
                 </div>
-                <p className="mt-1 text-xs text-gray-400">{note.updatedAt}</p>
+                <p className="mt-1 text-xs text-gray-400 dark:text-gray-500">
+                  {note.updatedAt}
+                </p>
               </a>
             ))
           )}

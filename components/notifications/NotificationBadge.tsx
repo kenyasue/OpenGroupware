@@ -22,7 +22,10 @@ export function NotificationBadge() {
 
   if (count === 0) {
     return (
-      <a href="/notifications" className="text-gray-600 hover:underline">
+      <a
+        href="/notifications"
+        className="text-gray-600 dark:text-gray-300 hover:underline"
+      >
         通知
       </a>
     );
@@ -31,7 +34,7 @@ export function NotificationBadge() {
   return (
     <a
       href="/notifications"
-      className="relative text-gray-600 hover:underline"
+      className="relative text-gray-600 dark:text-gray-300 hover:underline"
       data-notification-count={count}
     >
       通知

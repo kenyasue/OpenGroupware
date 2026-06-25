@@ -5,6 +5,8 @@ import { getDb } from '@/lib/db/sqlite';
 import { getCurrentUser, toPublicUser } from '@/lib/auth/getCurrentUser';
 import { UnauthorizedError } from '@/lib/errors';
 import { handleApiError, jsonError } from '@/lib/api/handleError';
+import type { Locale, Theme } from '@/lib/types';
+import { PREF_MAX_AGE } from '@/lib/i18n/constants';
 
 export const runtime = 'nodejs';
 
@@ -21,6 +23,7 @@ export async function PATCH(request: NextRequest) {
     return jsonError(400, 'リクエスト本文が不正です');
   }
 
+  // theme/locale は生値を Service に渡し、バリデータで不正値を弾く(→ ValidationError → 400)
   const authService = new AuthService(new UserRepository(getDb()));
   try {
     const updated = authService.updateProfile(currentUser.id, {
@@ -28,8 +31,23 @@ export async function PATCH(request: NextRequest) {
       email: typeof body.email === 'string' ? body.email : undefined,
       avatarUrl:
         typeof body.avatarUrl === 'string' ? body.avatarUrl : undefined,
+      theme: typeof body.theme === 'string' ? (body.theme as Theme) : undefined,
+      locale:
+        typeof body.locale === 'string' ? (body.locale as Locale) : undefined,
     });
-    return NextResponse.json({ user: toPublicUser(updated) });
+    const res = NextResponse.json({ user: toPublicUser(updated) });
+    // 保存結果の theme/locale をCookieに反映(SSRでレイアウトが読めるように)
+    res.cookies.set('theme', updated.theme, {
+      path: '/',
+      maxAge: PREF_MAX_AGE,
+      sameSite: 'lax',
+    });
+    res.cookies.set('locale', updated.locale, {
+      path: '/',
+      maxAge: PREF_MAX_AGE,
+      sameSite: 'lax',
+    });
+    return res;
   } catch (error) {
     return handleApiError(error);
   }

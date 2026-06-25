@@ -23,8 +23,8 @@ export function WeekView({
   onSelectDate: (dateKey: string) => void;
 }) {
   return (
-    <div className="overflow-hidden rounded-lg border bg-white">
-      <div className="grid grid-cols-7 border-b bg-gray-50 text-center text-xs font-medium text-gray-500">
+    <div className="overflow-hidden rounded-lg border bg-white dark:bg-gray-800">
+      <div className="grid grid-cols-7 border-b bg-gray-50 dark:bg-gray-900 text-center text-xs font-medium text-gray-500 dark:text-gray-400">
         {days.map((d) => {
           const key = toISODate(d);
           return (
@@ -32,15 +32,17 @@ export function WeekView({
               key={key}
               type="button"
               onClick={() => onSelectDate(key)}
-              className="py-2 hover:bg-gray-100"
+              className="py-2 hover:bg-gray-100 dark:hover:bg-gray-700"
               data-testid={`calendar-weekday-${key}`}
             >
-              <div className="text-gray-500">{WEEKDAY_LABELS[d.getDay()]}</div>
+              <div className="text-gray-500 dark:text-gray-400">
+                {WEEKDAY_LABELS[d.getDay()]}
+              </div>
               <div
                 className={`mt-0.5 inline-flex h-6 w-6 items-center justify-center rounded-full text-sm ${
                   key === todayKey
                     ? 'bg-blue-600 font-bold text-white'
-                    : 'text-gray-700'
+                    : 'text-gray-700 dark:text-gray-200'
                 }`}
               >
                 {d.getDate()}
@@ -61,7 +63,9 @@ export function WeekView({
             >
               <div className="space-y-1">
                 {dayEvents.length === 0 ? (
-                  <p className="px-1 py-1 text-xs text-gray-300">-</p>
+                  <p className="px-1 py-1 text-xs text-gray-300 dark:text-gray-600">
+                    -
+                  </p>
                 ) : (
                   dayEvents.map((e) => (
                     <button
@@ -70,8 +74,9 @@ export function WeekView({
                       onClick={() => onSelectDate(key)}
                       title={e.title}
                       className={`block w-full truncate rounded border px-1 py-0.5 text-left text-xs ${
-                        SOURCE_COLORS[e.source] ?? 'bg-gray-100 text-gray-600'
-                      } ${SOURCE_CHIP_BORDER[e.source] ?? 'border-gray-200'}`}
+                        SOURCE_COLORS[e.source] ??
+                        'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'
+                      } ${SOURCE_CHIP_BORDER[e.source] ?? 'border-gray-200 dark:border-gray-700'}`}
                       data-testid={`calendar-event-${e.key}`}
                     >
                       <span className="font-mono text-[10px] opacity-70">

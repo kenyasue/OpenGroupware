@@ -3,9 +3,11 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import type { PublicUser } from '@/lib/auth/getCurrentUser';
+import { useI18n } from '@/lib/i18n/I18nProvider';
 
 export default function ProfilePage() {
   const router = useRouter();
+  const { t, locale, theme, setLocale, setTheme } = useI18n();
   const [user, setUser] = useState<PublicUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [name, setName] = useState('');
@@ -44,7 +46,7 @@ export default function ProfilePage() {
       const data = (await res.json().catch(() => null)) as {
         error?: { message?: string };
       } | null;
-      setError(data?.error?.message ?? '更新に失敗しました');
+      setError(data?.error?.message ?? t('auth.failed'));
     }
   }
 
@@ -55,61 +57,63 @@ export default function ProfilePage() {
 
   if (loading) {
     return (
-      <main className="flex min-h-screen items-center justify-center">
-        <p>読み込み中...</p>
+      <main className="flex min-h-screen items-center justify-center bg-gray-50 dark:bg-gray-900">
+        <p className="text-gray-500 dark:text-gray-400">
+          {t('common.loading')}
+        </p>
       </main>
     );
   }
 
   return (
-    <main className="min-h-screen bg-gray-50 p-8">
-      <div className="mx-auto max-w-md rounded-lg border bg-white p-8 shadow-sm">
+    <main className="min-h-screen bg-gray-50 p-8 dark:bg-gray-900">
+      <div className="mx-auto max-w-md rounded-lg border bg-white p-8 shadow-sm dark:border-gray-700 dark:bg-gray-800">
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold">プロフィール</h1>
+          <h1 className="text-2xl font-bold">{t('profile.title')}</h1>
           <button
             type="button"
             onClick={onLogout}
-            className="text-sm text-blue-600 hover:underline"
+            className="text-sm text-blue-600 hover:underline dark:text-blue-400"
           >
-            ログアウト
+            {t('header.logout')}
           </button>
         </div>
 
         <form className="mt-6 space-y-4" onSubmit={onSubmit}>
           <div>
             <label htmlFor="name" className="block text-sm font-medium">
-              表示名
+              {t('profile.displayName')}
             </label>
             <input
               id="name"
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="mt-1 w-full rounded border px-3 py-2"
+              className="mt-1 w-full rounded border px-3 py-2 dark:border-gray-600 dark:bg-gray-700"
             />
           </div>
           <div>
             <label htmlFor="email" className="block text-sm font-medium">
-              メールアドレス
+              {t('profile.email')}
             </label>
             <input
               id="email"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="mt-1 w-full rounded border px-3 py-2"
+              className="mt-1 w-full rounded border px-3 py-2 dark:border-gray-600 dark:bg-gray-700"
             />
           </div>
           <div>
             <label htmlFor="avatarUrl" className="block text-sm font-medium">
-              アイコン画像URL
+              {t('profile.avatarUrl')}
             </label>
             <input
               id="avatarUrl"
               type="url"
               value={avatarUrl}
               onChange={(e) => setAvatarUrl(e.target.value)}
-              className="mt-1 w-full rounded border px-3 py-2"
+              className="mt-1 w-full rounded border px-3 py-2 dark:border-gray-600 dark:bg-gray-700"
             />
           </div>
 
@@ -119,26 +123,64 @@ export default function ProfilePage() {
             </p>
           )}
           {saved && (
-            <p className="text-sm text-green-600">プロフィールを更新しました</p>
+            <p className="text-sm text-green-600">{t('profile.saved')}</p>
           )}
 
           <button
             type="submit"
             className="w-full rounded bg-blue-600 px-4 py-2 font-medium text-white hover:bg-blue-700"
           >
-            保存
+            {t('common.save')}
           </button>
         </form>
+
+        <div className="mt-6 space-y-3 border-t pt-4 dark:border-gray-700">
+          <div>
+            <label htmlFor="theme-select" className="block text-sm font-medium">
+              {t('profile.theme')}
+            </label>
+            <select
+              id="theme-select"
+              value={theme}
+              onChange={(e) =>
+                void setTheme(e.target.value as 'dark' | 'light')
+              }
+              className="mt-1 w-full rounded border px-3 py-2 dark:border-gray-600 dark:bg-gray-700"
+              data-testid="profile-theme-select"
+            >
+              <option value="dark">{t('theme.dark')}</option>
+              <option value="light">{t('theme.light')}</option>
+            </select>
+          </div>
+          <div>
+            <label
+              htmlFor="locale-select"
+              className="block text-sm font-medium"
+            >
+              {t('profile.language')}
+            </label>
+            <select
+              id="locale-select"
+              value={locale}
+              onChange={(e) => setLocale(e.target.value as 'en' | 'ja')}
+              className="mt-1 w-full rounded border px-3 py-2 dark:border-gray-600 dark:bg-gray-700"
+              data-testid="profile-locale-select"
+            >
+              <option value="en">{t('language.english')}</option>
+              <option value="ja">{t('language.japanese')}</option>
+            </select>
+          </div>
+        </div>
 
         <button
           type="button"
           onClick={() => router.push('/dashboard')}
-          className="mt-4 w-full text-center text-sm text-blue-600 hover:underline"
+          className="mt-4 w-full text-center text-sm text-blue-600 hover:underline dark:text-blue-400"
         >
-          ダッシュボードへ
+          {t('profile.backToDashboard')}
         </button>
-        <p className="mt-2 text-center text-xs text-gray-500">
-          ロール: {user?.role}
+        <p className="mt-2 text-center text-xs text-gray-500 dark:text-gray-400">
+          {t('profile.role')}: {user?.role}
         </p>
       </div>
     </main>

@@ -49,7 +49,7 @@ export function ProjectSettingsForm({
 
   if (!canManage) {
     return (
-      <p className="text-sm text-gray-500">
+      <p className="text-sm text-gray-500 dark:text-gray-400">
         プロジェクトの設定変更には管理者権限が必要です。
       </p>
     );

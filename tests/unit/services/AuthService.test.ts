@@ -3,7 +3,12 @@ import { createMigratedTestDb } from '@/tests/helpers/db';
 import type { SqliteDatabase } from '@/lib/db/sqlite';
 import { UserRepository } from '@/repositories/UserRepository';
 import { AuthService } from '@/services/AuthService';
-import { ConflictError, UnauthorizedError, NotFoundError } from '@/lib/errors';
+import {
+  ConflictError,
+  UnauthorizedError,
+  NotFoundError,
+  ValidationError,
+} from '@/lib/errors';
 import { verifySessionToken } from '@/lib/auth/session';
 import bcrypt from 'bcrypt';
 
@@ -161,6 +166,38 @@ describe('AuthService', () => {
       expect(() => authService.updateProfile(99999, { name: 'X' })).toThrow(
         NotFoundError
       );
+    });
+
+    it('updates theme and locale', () => {
+      const created = authService.register({
+        name: 'Alice',
+        email: 'alice@example.com',
+        password: 'password123',
+      });
+      const updated = authService.updateProfile(created.id, {
+        theme: 'light',
+        locale: 'ja',
+      });
+      expect(updated.theme).toBe('light');
+      expect(updated.locale).toBe('ja');
+    });
+
+    it('rejects an invalid theme or locale', () => {
+      const created = authService.register({
+        name: 'Alice',
+        email: 'alice@example.com',
+        password: 'password123',
+      });
+      expect(() =>
+        authService.updateProfile(created.id, {
+          theme: 'pink' as never,
+        })
+      ).toThrow(ValidationError);
+      expect(() =>
+        authService.updateProfile(created.id, {
+          locale: 'fr' as never,
+        })
+      ).toThrow(ValidationError);
     });
   });
 

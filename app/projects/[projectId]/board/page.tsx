@@ -38,7 +38,7 @@ export default async function BoardPage({
   });
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <Header user={toPublicUser(user)} />
       <ProjectNav projectId={project.id} active="board" />
       <main className="mx-auto max-w-3xl space-y-6 p-6">
@@ -46,27 +46,31 @@ export default async function BoardPage({
         <ThreadForm projectId={project.id} />
         <section className="space-y-3">
           {items.length === 0 ? (
-            <p className="text-sm text-gray-400">スレッドはありません。</p>
+            <p className="text-sm text-gray-400 dark:text-gray-500">
+              スレッドはありません。
+            </p>
           ) : (
             items.map((thread) => (
               <a
                 key={thread.id}
                 href={`/projects/${project.id}/board/${thread.id}`}
-                className="block rounded-lg border bg-white p-4 shadow-sm hover:shadow-md"
+                className="block rounded-lg border bg-white dark:bg-gray-800 p-4 shadow-sm hover:shadow-md"
               >
                 <div className="flex items-center justify-between">
-                  <h3 className="font-semibold text-gray-800">
+                  <h3 className="font-semibold text-gray-800 dark:text-gray-100">
                     {thread.isPinned === 1 && '📌 '}
                     {thread.isImportant === 1 && '❗ '}
                     {thread.title}
                   </h3>
                   {thread.category && (
-                    <span className="rounded bg-gray-100 px-2 py-0.5 text-xs">
+                    <span className="rounded bg-gray-100 dark:bg-gray-700 px-2 py-0.5 text-xs">
                       {thread.category}
                     </span>
                   )}
                 </div>
-                <p className="mt-1 text-xs text-gray-400">{thread.createdAt}</p>
+                <p className="mt-1 text-xs text-gray-400 dark:text-gray-500">
+                  {thread.createdAt}
+                </p>
               </a>
             ))
           )}

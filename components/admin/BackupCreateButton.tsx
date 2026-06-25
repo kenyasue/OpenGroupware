@@ -24,8 +24,8 @@ export function BackupCreateButton() {
   }
 
   return (
-    <div className="rounded-lg border bg-white p-4 shadow-sm">
-      <p className="text-sm text-gray-600">
+    <div className="rounded-lg border bg-white dark:bg-gray-800 p-4 shadow-sm">
+      <p className="text-sm text-gray-600 dark:text-gray-300">
         DBファイル + uploadsディレクトリをZIP化してバックアップを作成します。
       </p>
       <button

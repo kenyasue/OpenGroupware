@@ -131,7 +131,7 @@ export function TodoDialog({
       data-testid="todo-dialog-backdrop"
     >
       <div
-        className="mt-8 w-full max-w-xl rounded-lg bg-white shadow-xl"
+        className="mt-8 w-full max-w-xl rounded-lg bg-white dark:bg-gray-800 shadow-xl"
         onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"
@@ -139,11 +139,13 @@ export function TodoDialog({
         data-testid="todo-dialog"
       >
         <div className="flex items-center justify-between border-b p-4">
-          <h2 className="text-lg font-bold text-gray-800">ToDoの編集</h2>
+          <h2 className="text-lg font-bold text-gray-800 dark:text-gray-100">
+            ToDoの編集
+          </h2>
           <button
             type="button"
             onClick={onClose}
-            className="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+            className="rounded p-1 text-gray-400 dark:text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-600"
             aria-label="閉じる"
             data-testid="todo-dialog-close"
           >
@@ -152,7 +154,9 @@ export function TodoDialog({
         </div>
 
         {loading ? (
-          <p className="p-6 text-sm text-gray-400">読み込み中...</p>
+          <p className="p-6 text-sm text-gray-400 dark:text-gray-500">
+            読み込み中...
+          </p>
         ) : (
           <div className="max-h-[70vh] space-y-3 overflow-y-auto p-4">
             <div>
@@ -248,7 +252,7 @@ export function TodoDialog({
                   {tagList.map((t) => (
                     <span
                       key={t}
-                      className="rounded bg-gray-100 px-2 py-0.5 text-xs text-gray-600"
+                      className="rounded bg-gray-100 dark:bg-gray-700 px-2 py-0.5 text-xs text-gray-600 dark:text-gray-300"
                     >
                       {t}
                     </span>
@@ -262,7 +266,9 @@ export function TodoDialog({
               {attachments.length > 0 ? (
                 <AttachmentList attachments={attachments} />
               ) : (
-                <p className="text-xs text-gray-400">添付なし</p>
+                <p className="text-xs text-gray-400 dark:text-gray-500">
+                  添付なし
+                </p>
               )}
               <div className="mt-2">
                 <AttachmentPicker
@@ -273,7 +279,7 @@ export function TodoDialog({
               </div>
             </div>
 
-            <div className="space-y-1 border-t pt-3 text-xs text-gray-500">
+            <div className="space-y-1 border-t pt-3 text-xs text-gray-500 dark:text-gray-400">
               <p>完了日時: {current.completedAt ?? '未完了'}</p>
               <p>作成: {current.createdAt}</p>
               <p>更新: {current.updatedAt}</p>
@@ -291,7 +297,7 @@ export function TodoDialog({
           <button
             type="button"
             onClick={onClose}
-            className="rounded border px-4 py-2 text-sm text-gray-600 hover:bg-gray-100"
+            className="rounded border px-4 py-2 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
           >
             キャンセル
           </button>

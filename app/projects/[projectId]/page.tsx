@@ -31,18 +31,20 @@ export default async function ProjectOverviewPage({
   const { project } = dashboard;
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <Header user={toPublicUser(user)} />
       <ProjectNav projectId={project.id} active="overview" />
       <main className="mx-auto max-w-4xl space-y-6 p-6">
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-bold">{project.name}</h1>
-          <span className="rounded bg-gray-100 px-2 py-0.5 text-xs">
+          <span className="rounded bg-gray-100 dark:bg-gray-700 px-2 py-0.5 text-xs">
             {project.status}
           </span>
         </div>
         {project.description && (
-          <p className="text-gray-600">{project.description}</p>
+          <p className="text-gray-600 dark:text-gray-300">
+            {project.description}
+          </p>
         )}
 
         <div className="grid gap-4 sm:grid-cols-2">
@@ -119,7 +121,7 @@ export default async function ProjectOverviewPage({
                 <p className="text-sm">
                   {m.title} - {m.progress}%
                 </p>
-                <div className="h-1.5 w-full rounded bg-gray-200">
+                <div className="h-1.5 w-full rounded bg-gray-200 dark:bg-gray-700">
                   <div
                     className="h-1.5 rounded bg-blue-500"
                     style={{ width: `${m.progress}%` }}

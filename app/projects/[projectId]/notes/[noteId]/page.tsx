@@ -31,7 +31,7 @@ export default async function NoteDetailPage({
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <Header user={toPublicUser(user)} />
       <ProjectNav projectId={Number(projectId)} active="notes" />
       <main className="mx-auto max-w-3xl space-y-6 p-6">
@@ -41,18 +41,20 @@ export default async function NoteDetailPage({
         >
           ← メモ一覧へ
         </a>
-        <div className="rounded-lg border bg-white p-6 shadow-sm">
+        <div className="rounded-lg border bg-white dark:bg-gray-800 p-6 shadow-sm">
           <h1 className="text-2xl font-bold">
             {note.isPinned === 1 && '📌 '}
             {note.title}
           </h1>
           {note.tags && (
-            <p className="mt-1 text-xs text-gray-500">{note.tags}</p>
+            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+              {note.tags}
+            </p>
           )}
           <div className="mt-4">
             <MarkdownBody bodyMd={note.bodyMd} />
           </div>
-          <p className="mt-4 text-xs text-gray-400">
+          <p className="mt-4 text-xs text-gray-400 dark:text-gray-500">
             作成: {note.createdAt} / 更新: {note.updatedAt}
           </p>
         </div>

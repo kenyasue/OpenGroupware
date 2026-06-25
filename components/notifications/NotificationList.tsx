@@ -18,11 +18,15 @@ export function NotificationList({
   notifications: Notification[];
 }) {
   if (notifications.length === 0) {
-    return <p className="text-sm text-gray-400">未読の通知はありません。</p>;
+    return (
+      <p className="text-sm text-gray-400 dark:text-gray-500">
+        未読の通知はありません。
+      </p>
+    );
   }
 
   return (
-    <ul className="divide-y rounded-lg border bg-white shadow-sm">
+    <ul className="divide-y rounded-lg border bg-white dark:bg-gray-800 shadow-sm">
       {notifications.map((notification) => (
         <li key={notification.id} className="p-4">
           <div className="flex items-center justify-between">
@@ -31,9 +35,13 @@ export function NotificationList({
             </span>
             <MarkReadButton notificationId={notification.id} />
           </div>
-          <p className="mt-2 font-medium text-gray-800">{notification.title}</p>
+          <p className="mt-2 font-medium text-gray-800 dark:text-gray-100">
+            {notification.title}
+          </p>
           {notification.body && (
-            <p className="mt-1 text-sm text-gray-600">{notification.body}</p>
+            <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">
+              {notification.body}
+            </p>
           )}
           {notification.projectId !== null && (
             <a

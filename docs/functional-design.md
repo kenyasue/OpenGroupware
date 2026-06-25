@@ -84,11 +84,15 @@ interface User {
   avatarUrl: string | null;     // アイコン画像URL
   role: UserRole;               // 'system_admin' | 'project_admin' | 'member' | 'guest'
   status: UserStatus;           // 'active' | 'inactive'
+  theme: Theme;                 // 'dark' | 'light' (既定 dark)
+  locale: Locale;               // 'en' | 'ja' (既定 en)
   createdAt: string;            // ISO8601
   updatedAt: string;            // ISO8601
 }
 type UserRole = 'system_admin' | 'project_admin' | 'member' | 'guest';
 type UserStatus = 'active' | 'inactive';
+type Theme = 'dark' | 'light';
+type Locale = 'en' | 'ja';
 ```
 
 **制約**: emailは一意。passwordHashは平文保存しない。status='inactive'はログイン不可。

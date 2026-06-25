@@ -34,7 +34,7 @@ export function AttachmentList({
           return (
             <li
               key={a.id}
-              className="overflow-hidden rounded border bg-gray-50"
+              className="overflow-hidden rounded border bg-gray-50 dark:bg-gray-900"
               data-testid={`attachment-${a.id}`}
             >
               {isImage ? (

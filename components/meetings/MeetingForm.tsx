@@ -69,7 +69,7 @@ export function MeetingForm({
   return (
     <form
       onSubmit={onSubmit}
-      className="space-y-3 rounded-lg border bg-white p-4 shadow-sm"
+      className="space-y-3 rounded-lg border bg-white dark:bg-gray-800 p-4 shadow-sm"
       data-testid="meeting-form"
     >
       <div>

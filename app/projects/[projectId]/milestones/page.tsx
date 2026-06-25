@@ -41,7 +41,7 @@ export default async function MilestonesPage({
   const milestones = scheduleService.getMilestones(user.id, project.id);
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <Header user={toPublicUser(user)} />
       <ProjectNav projectId={project.id} active="milestones" />
       <main className="mx-auto max-w-3xl space-y-6 p-6">
@@ -49,34 +49,38 @@ export default async function MilestonesPage({
         <MilestoneForm projectId={project.id} />
         <section className="space-y-3">
           {milestones.length === 0 ? (
-            <p className="text-sm text-gray-400">
+            <p className="text-sm text-gray-400 dark:text-gray-500">
               マイルストーンはありません。
             </p>
           ) : (
             milestones.map((m) => (
               <div
                 key={m.id}
-                className="rounded-lg border bg-white p-4 shadow-sm"
+                className="rounded-lg border bg-white dark:bg-gray-800 p-4 shadow-sm"
                 data-testid={`milestone-${m.id}`}
               >
                 <div className="flex items-center justify-between">
-                  <h3 className="font-semibold text-gray-800">{m.title}</h3>
-                  <span className="text-xs text-gray-500">
+                  <h3 className="font-semibold text-gray-800 dark:text-gray-100">
+                    {m.title}
+                  </h3>
+                  <span className="text-xs text-gray-500 dark:text-gray-400">
                     {m.status}
                     {m.dueDate ? ` / 期限: ${m.dueDate}` : ''}
                   </span>
                 </div>
                 {m.description && (
-                  <p className="mt-1 text-sm text-gray-600">{m.description}</p>
+                  <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">
+                    {m.description}
+                  </p>
                 )}
                 <div className="mt-3">
-                  <div className="flex items-center justify-between text-xs text-gray-500">
+                  <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
                     <span>進捗</span>
                     <span data-testid={`milestone-progress-${m.id}`}>
                       {m.progress}%
                     </span>
                   </div>
-                  <div className="mt-1 h-2 w-full rounded bg-gray-200">
+                  <div className="mt-1 h-2 w-full rounded bg-gray-200 dark:bg-gray-700">
                     <div
                       className={`h-2 rounded ${progressColor(m.progress)}`}
                       style={{ width: `${m.progress}%` }}

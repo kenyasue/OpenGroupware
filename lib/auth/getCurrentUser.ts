@@ -16,6 +16,8 @@ export function toPublicUser(user: User): PublicUser {
     avatarUrl: user.avatarUrl,
     role: user.role,
     status: user.status,
+    theme: user.theme,
+    locale: user.locale,
     createdAt: user.createdAt,
     updatedAt: user.updatedAt,
   };

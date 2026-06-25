@@ -8,6 +8,8 @@
 
 export type UserRole = 'system_admin' | 'project_admin' | 'member' | 'guest';
 export type UserStatus = 'active' | 'inactive';
+export type Theme = 'dark' | 'light';
+export type Locale = 'en' | 'ja';
 export type ProjectStatus = 'active' | 'on_hold' | 'completed' | 'archived';
 export type ProjectMemberRole = 'admin' | 'member' | 'guest';
 export type BoardCategory =
@@ -48,6 +50,8 @@ export interface User {
   avatarUrl: string | null;
   role: UserRole;
   status: UserStatus;
+  theme: Theme;
+  locale: Locale;
   createdAt: string;
   updatedAt: string;
 }

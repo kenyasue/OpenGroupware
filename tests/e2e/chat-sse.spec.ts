@@ -22,12 +22,16 @@ test.describe('chat (SSE realtime)', () => {
     const memberEmail = unique('member') + '@example.com';
 
     // メンバーを先に登録(UIで作成+ログイン)
-    const memberContext = await browser.newContext();
+    const memberContext = await browser.newContext({
+      storageState: 'tests/e2e/locale-ja.json',
+    });
     const memberPage = await memberContext.newPage();
     await registerAndLogin(memberPage, memberEmail, 'Member');
 
     // オーナー登録＋プロジェクト作成
-    const ownerContext = await browser.newContext();
+    const ownerContext = await browser.newContext({
+      storageState: 'tests/e2e/locale-ja.json',
+    });
     const ownerPage = await ownerContext.newPage();
     await registerAndLogin(ownerPage, ownerEmail, 'Owner');
     await ownerPage.getByLabel('プロジェクト名').fill(unique('Proj'));

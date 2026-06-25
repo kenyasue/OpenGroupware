@@ -98,7 +98,7 @@ export const AttachmentPicker = forwardRef<
 
   return (
     <div className="space-y-2" data-testid="attachment-picker">
-      <label className="inline-flex cursor-pointer items-center gap-1 rounded border bg-white px-3 py-1 text-sm text-gray-600 hover:bg-gray-100">
+      <label className="inline-flex cursor-pointer items-center gap-1 rounded border bg-white dark:bg-gray-800 px-3 py-1 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
         📎 添付
         <input
           ref={inputRef}
@@ -111,7 +111,10 @@ export const AttachmentPicker = forwardRef<
         />
       </label>
       {loading && (
-        <p className="text-xs text-gray-500" data-testid="attachment-loading">
+        <p
+          className="text-xs text-gray-500 dark:text-gray-400"
+          data-testid="attachment-loading"
+        >
           アップロード中...
         </p>
       )}
@@ -128,7 +131,7 @@ export const AttachmentPicker = forwardRef<
             return (
               <li
                 key={f.fileId}
-                className="relative overflow-hidden rounded border bg-gray-50"
+                className="relative overflow-hidden rounded border bg-gray-50 dark:bg-gray-900"
                 data-testid={`attachment-picked-${f.fileId}`}
               >
                 {isImage ? (

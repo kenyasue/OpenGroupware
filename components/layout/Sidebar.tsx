@@ -4,6 +4,8 @@
  */
 export function Sidebar({ children }: { children: React.ReactNode }) {
   return (
-    <aside className="w-48 shrink-0 border-r bg-gray-50 p-4">{children}</aside>
+    <aside className="w-48 shrink-0 border-r bg-gray-50 dark:bg-gray-900 p-4">
+      {children}
+    </aside>
   );
 }

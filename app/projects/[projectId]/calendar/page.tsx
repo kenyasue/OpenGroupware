@@ -60,7 +60,7 @@ export default async function CalendarPage({
   const events = scheduleService.getCalendarEvents(user.id, project.id, range);
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <Header user={toPublicUser(user)} />
       <ProjectNav projectId={project.id} active="calendar" />
       <main className="mx-auto max-w-6xl space-y-6 p-6">

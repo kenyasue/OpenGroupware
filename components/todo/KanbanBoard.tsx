@@ -8,7 +8,7 @@ import { TodoDialog } from '@/components/todo/TodoDialog';
 const PRIORITY_COLORS: Record<string, string> = {
   high: 'bg-red-100 text-red-700',
   normal: 'bg-yellow-100 text-yellow-700',
-  low: 'bg-gray-100 text-gray-600',
+  low: 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300',
 };
 
 export function KanbanBoard({
@@ -88,13 +88,13 @@ export function KanbanBoard({
         return (
           <section
             key={column.id}
-            className="w-64 shrink-0 rounded-lg bg-gray-100 p-3"
+            className="w-64 shrink-0 rounded-lg bg-gray-100 dark:bg-gray-700 p-3"
             onDragOver={(e) => e.preventDefault()}
             onDrop={(e) => onDrop(e, column)}
             data-testid={`kanban-column-${column.id}`}
             data-column-id={column.id}
           >
-            <h2 className="mb-2 text-sm font-semibold text-gray-700">
+            <h2 className="mb-2 text-sm font-semibold text-gray-700 dark:text-gray-200">
               {column.name} ({colItems.length})
             </h2>
             <ul className="space-y-2">
@@ -112,7 +112,7 @@ export function KanbanBoard({
                     draggable
                     onDragStart={(e) => onDragStart(e, item.id)}
                     onClick={() => setSelectedItem(item)}
-                    className={`cursor-grab rounded border bg-white p-2 shadow-sm ${
+                    className={`cursor-grab rounded border bg-white dark:bg-gray-800 p-2 shadow-sm ${
                       draggingId === item.id ? 'opacity-50' : ''
                     } ${item.completedAt ? 'opacity-60 line-through' : ''}`}
                     data-testid={`todo-card-${item.id}`}
@@ -146,17 +146,17 @@ export function KanbanBoard({
                         {item.priority}
                       </span>
                       {item.dueDate && (
-                        <span className="text-xs text-gray-500">
+                        <span className="text-xs text-gray-500 dark:text-gray-400">
                           期限: {item.dueDate}
                         </span>
                       )}
                       {item.startDate && (
-                        <span className="text-xs text-gray-400">
+                        <span className="text-xs text-gray-400 dark:text-gray-500">
                           開始: {item.startDate}
                         </span>
                       )}
                       {assignee && (
-                        <span className="text-xs text-gray-500">
+                        <span className="text-xs text-gray-500 dark:text-gray-400">
                           @{assignee.user.name}
                         </span>
                       )}
@@ -166,7 +166,7 @@ export function KanbanBoard({
                         {tags.map((t) => (
                           <span
                             key={t}
-                            className="rounded bg-gray-100 px-1.5 py-0.5 text-[10px] text-gray-600"
+                            className="rounded bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 text-[10px] text-gray-600 dark:text-gray-300"
                           >
                             {t}
                           </span>

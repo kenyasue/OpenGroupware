@@ -12,6 +12,9 @@ export default defineConfig({
   use: {
     baseURL: 'http://localhost:3000',
     trace: 'on-first-retry',
+    // E2Eは既存の日本語アサーションを維持するため既定で ja ロケールを使用。
+    // (既定UIは en だが、テストは ja Cookie を与えて日本語表示を検証する)
+    storageState: 'tests/e2e/locale-ja.json',
   },
   projects: [
     {

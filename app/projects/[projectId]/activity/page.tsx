@@ -50,24 +50,28 @@ export default async function ProjectActivityPage({
   const { items } = activityService.listByProject(project.id, 1);
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <Header user={toPublicUser(user)} />
       <ProjectNav projectId={project.id} active="activity" />
       <main className="mx-auto max-w-3xl space-y-6 p-6">
         <h1 className="text-2xl font-bold">アクティビティログ</h1>
         {items.length === 0 ? (
-          <p className="text-sm text-gray-400">アクティビティはありません。</p>
+          <p className="text-sm text-gray-400 dark:text-gray-500">
+            アクティビティはありません。
+          </p>
         ) : (
-          <ul className="divide-y rounded-lg border bg-white shadow-sm">
+          <ul className="divide-y rounded-lg border bg-white dark:bg-gray-800 shadow-sm">
             {items.map((log) => (
               <li key={log.id} className="p-4">
                 <div className="flex items-center justify-between">
-                  <span className="rounded bg-gray-100 px-2 py-0.5 text-xs">
+                  <span className="rounded bg-gray-100 dark:bg-gray-700 px-2 py-0.5 text-xs">
                     {ACTION_LABELS[log.action] ?? log.action}
                   </span>
-                  <span className="text-xs text-gray-400">{log.createdAt}</span>
+                  <span className="text-xs text-gray-400 dark:text-gray-500">
+                    {log.createdAt}
+                  </span>
                 </div>
-                <p className="mt-2 text-sm text-gray-700">
+                <p className="mt-2 text-sm text-gray-700 dark:text-gray-200">
                   {log.targetType}
                   {log.targetId !== null ? ` #${log.targetId}` : ''}
                 </p>
