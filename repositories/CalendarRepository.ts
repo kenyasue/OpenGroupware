@@ -50,6 +50,14 @@ export interface CreateEventInput {
 export class CalendarRepository {
   constructor(private readonly db: SqliteDatabase) {}
 
+  findByProject(projectId: number): CalendarEvent[] {
+    const rows = this.db.query<CalendarEventRow>(
+      'SELECT * FROM calendar_events WHERE project_id = @projectId AND deleted_at IS NULL ORDER BY start_at ASC, id ASC',
+      { projectId }
+    );
+    return rows.map(mapEvent);
+  }
+
   findByProjectInRange(
     projectId: number,
     from: string,
