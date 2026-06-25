@@ -235,7 +235,7 @@ components/
 ├── chat/                # ChatWindow, MessageInput, MessageList
 ├── todo/                # KanbanBoard, KanbanColumn, TodoCard
 ├── files/               # FileList, Uploader, Lightbox
-├── calendar/            # CalendarView, EventBadge
+├── calendar/            # CalendarView, MonthView, WeekView, DayView, EventDetailDialog, CalendarEventForm
 ├── meetings/            # MeetingForm, ConflictWarning
 ├── notes/               # NoteEditor, MarkdownPreview
 └── notifications/       # NotificationList, NotificationBadge

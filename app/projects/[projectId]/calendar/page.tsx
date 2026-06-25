@@ -7,27 +7,34 @@ import {
 import { Header } from '@/components/layout/Header';
 import { ProjectNav } from '@/components/layout/ProjectNav';
 import { CalendarEventForm } from '@/components/calendar/CalendarEventForm';
+import { CalendarView } from '@/components/calendar/CalendarView';
+import {
+  rangeForView,
+  toISODate,
+  parseISODate,
+  type CalendarViewMode,
+} from '@/lib/calendar/grid';
 import { ForbiddenError, NotFoundError } from '@/lib/errors';
 
 export const dynamic = 'force-dynamic';
 
-const SOURCE_COLORS: Record<string, string> = {
-  event: 'bg-blue-100 text-blue-700',
-  milestone: 'bg-purple-100 text-purple-700',
-  todo: 'bg-yellow-100 text-yellow-700',
-};
+const VALID_VIEWS: CalendarViewMode[] = ['month', 'week', 'day'];
+
+function isCalendarView(v: unknown): v is CalendarViewMode {
+  return typeof v === 'string' && (VALID_VIEWS as string[]).includes(v);
+}
 
 export default async function CalendarPage({
   params,
   searchParams,
 }: {
   params: Promise<{ projectId: string }>;
-  searchParams: Promise<{ from?: string; to?: string }>;
+  searchParams: Promise<{ view?: string; date?: string }>;
 }) {
   const user = await getCurrentUser();
   if (!user) redirect('/login');
   const { projectId } = await params;
-  const { from, to } = await searchParams;
+  const { view, date } = await searchParams;
 
   const projectService = createProjectService();
   let project: Awaited<ReturnType<typeof projectService.getProject>>;
@@ -40,55 +47,35 @@ export default async function CalendarPage({
     throw error;
   }
 
-  // デフォルトは当月
-  const now = new Date();
-  const defaultFrom = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
-  const rangeFrom = from ?? defaultFrom;
-  const rangeTo = to ?? defaultFrom.replace(/-01$/, '-28');
+  // 表示モードと基準日を解決(不正値はデフォルトへフォールバック)
+  const resolvedView: CalendarViewMode = isCalendarView(view) ? view : 'month';
+  const today = new Date();
+  const anchor =
+    date && /^\d{4}-\d{2}-\d{2}$/.test(date) ? parseISODate(date) : today;
 
+  // ビューに応じた取得範囲を計算しイベントを取得。
+  // アクセス権は getProject で参加確認済みなのでここでは再チェックしない。
+  const range = rangeForView(resolvedView, anchor);
   const scheduleService = createScheduleService();
-  const events = scheduleService.getCalendarEvents(user.id, project.id, {
-    from: rangeFrom,
-    to: rangeTo,
-  });
+  const events = scheduleService.getCalendarEvents(user.id, project.id, range);
 
   return (
     <div className="min-h-screen bg-gray-50">
       <Header user={toPublicUser(user)} />
       <ProjectNav projectId={project.id} active="calendar" />
-      <main className="mx-auto max-w-3xl space-y-6 p-6">
+      <main className="mx-auto max-w-6xl space-y-6 p-6">
         <h1 className="text-2xl font-bold">カレンダー</h1>
-        <p className="text-sm text-gray-500">
-          期間: {rangeFrom} 〜 {rangeTo}
-        </p>
-        <CalendarEventForm projectId={project.id} defaultDate={defaultFrom} />
-        <section className="space-y-2">
-          {events.length === 0 ? (
-            <p className="text-sm text-gray-400">
-              期間内のイベントはありません。
-            </p>
-          ) : (
-            events.map((e) => (
-              <div
-                key={e.key}
-                className="flex items-center justify-between rounded border bg-white p-3 shadow-sm"
-                data-testid={`calendar-event-${e.key}`}
-              >
-                <div>
-                  <p className="font-medium text-gray-800">{e.title}</p>
-                  <p className="text-xs text-gray-400">{e.startAt}</p>
-                </div>
-                <span
-                  className={`rounded px-2 py-0.5 text-xs ${
-                    SOURCE_COLORS[e.source] ?? 'bg-gray-100 text-gray-600'
-                  }`}
-                >
-                  {e.source}
-                </span>
-              </div>
-            ))
-          )}
-        </section>
+        <CalendarEventForm
+          projectId={project.id}
+          defaultDate={toISODate(anchor)}
+        />
+        <CalendarView
+          projectId={project.id}
+          events={events}
+          view={resolvedView}
+          anchorDate={toISODate(anchor)}
+          todayKey={toISODate(today)}
+        />
       </main>
     </div>
   );
