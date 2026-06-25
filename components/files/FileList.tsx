@@ -20,7 +20,11 @@ export function FileList({
   }
 
   if (files.length === 0) {
-    return <p className="text-sm text-gray-400">ファイルはありません。</p>;
+    return (
+      <p className="text-sm text-gray-400 dark:text-gray-500">
+        ファイルはありません。
+      </p>
+    );
   }
 
   return (
@@ -36,7 +40,7 @@ export function FileList({
           return (
             <li
               key={file.id}
-              className="rounded-lg border bg-white p-3 shadow-sm"
+              className="rounded-lg border bg-white dark:bg-gray-800 p-3 shadow-sm"
               data-testid={`file-item-${file.id}`}
             >
               {isImage ? (
@@ -56,25 +60,27 @@ export function FileList({
                   href={url}
                   target="_blank"
                   rel="noreferrer"
-                  className="flex h-24 items-center justify-center rounded bg-gray-100 text-sm text-blue-600 hover:underline"
+                  className="flex h-24 items-center justify-center rounded bg-gray-100 dark:bg-gray-700 text-sm text-blue-600 hover:underline"
                 >
                   PDF を開く
                 </a>
               ) : (
                 <a
                   href={url}
-                  className="flex h-24 items-center justify-center rounded bg-gray-100 text-sm text-blue-600 hover:underline"
+                  className="flex h-24 items-center justify-center rounded bg-gray-100 dark:bg-gray-700 text-sm text-blue-600 hover:underline"
                 >
                   ダウンロード
                 </a>
               )}
               <p
-                className="mt-2 truncate text-xs text-gray-700"
+                className="mt-2 truncate text-xs text-gray-700 dark:text-gray-200"
                 title={file.originalName}
               >
                 {file.originalName}
               </p>
-              <p className="text-xs text-gray-400">{file.size} bytes</p>
+              <p className="text-xs text-gray-400 dark:text-gray-500">
+                {file.size} bytes
+              </p>
               {canDelete && (
                 <button
                   type="button"

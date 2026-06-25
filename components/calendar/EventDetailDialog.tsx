@@ -51,7 +51,7 @@ export function EventDetailDialog({
       <div
         ref={dialogRef}
         tabIndex={-1}
-        className="mt-16 w-full max-w-lg rounded-lg bg-white shadow-xl focus:outline-none"
+        className="mt-16 w-full max-w-lg rounded-lg bg-white dark:bg-gray-800 shadow-xl focus:outline-none"
         onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"
@@ -59,11 +59,13 @@ export function EventDetailDialog({
         data-testid="calendar-detail-dialog"
       >
         <div className="flex items-center justify-between border-b p-4">
-          <h2 className="text-lg font-bold text-gray-800">{dateLabel}</h2>
+          <h2 className="text-lg font-bold text-gray-800 dark:text-gray-100">
+            {dateLabel}
+          </h2>
           <button
             type="button"
             onClick={onClose}
-            className="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+            className="rounded p-1 text-gray-400 dark:text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-600"
             aria-label="閉じる"
             data-testid="calendar-detail-close"
           >
@@ -72,34 +74,35 @@ export function EventDetailDialog({
         </div>
         <div className="max-h-[60vh] space-y-3 overflow-y-auto p-4">
           {events.length === 0 ? (
-            <p className="text-sm text-gray-400">
+            <p className="text-sm text-gray-400 dark:text-gray-500">
               この日のイベントはありません。
             </p>
           ) : (
             events.map((e) => (
               <div
                 key={e.key}
-                className="rounded border border-gray-200 p-3"
+                className="rounded border border-gray-200 dark:border-gray-700 p-3"
                 data-testid={`calendar-detail-${e.key}`}
               >
                 <div className="flex items-center justify-between gap-2">
-                  <p className="font-medium text-gray-800 break-words">
+                  <p className="font-medium text-gray-800 dark:text-gray-100 break-words">
                     {e.title}
                   </p>
                   <span
                     className={`shrink-0 rounded px-2 py-0.5 text-xs ${
-                      SOURCE_COLORS[e.source] ?? 'bg-gray-100 text-gray-600'
+                      SOURCE_COLORS[e.source] ??
+                      'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'
                     }`}
                   >
                     {SOURCE_LABELS[e.source] ?? e.source}
                   </span>
                 </div>
-                <p className="mt-1 text-xs text-gray-500">
+                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
                   {formatTime(e.startAt)}
                   {e.endAt ? ` 〜 ${formatTime(e.endAt)}` : ''}
                 </p>
                 {e.description && (
-                  <p className="mt-2 whitespace-pre-wrap text-sm text-gray-600">
+                  <p className="mt-2 whitespace-pre-wrap text-sm text-gray-600 dark:text-gray-300">
                     {e.description}
                   </p>
                 )}

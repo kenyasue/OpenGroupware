@@ -37,7 +37,7 @@ export function AddMemberForm({ projectId }: { projectId: number }) {
   return (
     <form
       onSubmit={onSubmit}
-      className="flex flex-col gap-2 rounded border bg-white p-4 sm:flex-row sm:items-end"
+      className="flex flex-col gap-2 rounded border bg-white dark:bg-gray-800 p-4 sm:flex-row sm:items-end"
     >
       <div className="flex-1">
         <label htmlFor="member-email" className="block text-sm font-medium">

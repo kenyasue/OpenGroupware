@@ -28,8 +28,8 @@ export function MonthView({
   onSelectDate: (dateKey: string) => void;
 }) {
   return (
-    <div className="overflow-hidden rounded-lg border bg-white">
-      <div className="grid grid-cols-7 border-b bg-gray-50 text-center text-xs font-medium text-gray-500">
+    <div className="overflow-hidden rounded-lg border bg-white dark:bg-gray-800">
+      <div className="grid grid-cols-7 border-b bg-gray-50 dark:bg-gray-900 text-center text-xs font-medium text-gray-500 dark:text-gray-400">
         {WEEKDAY_LABELS.map((w) => (
           <div key={w} className="py-2">
             {w}
@@ -50,7 +50,9 @@ export function MonthView({
                 <div
                   key={key}
                   className={`min-h-[110px] border-r border-t p-1 last:border-r-0 ${
-                    inMonth ? 'bg-white' : 'bg-gray-50'
+                    inMonth
+                      ? 'bg-white dark:bg-gray-800'
+                      : 'bg-gray-50 dark:bg-gray-900'
                   }`}
                   data-testid={`calendar-day-${key}`}
                 >
@@ -61,8 +63,8 @@ export function MonthView({
                       isToday
                         ? 'bg-blue-600 font-bold text-white'
                         : inMonth
-                          ? 'text-gray-700 hover:bg-gray-100'
-                          : 'text-gray-300 hover:bg-gray-100'
+                          ? 'text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700'
+                          : 'text-gray-300 dark:text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700'
                     }`}
                     aria-label={`${key} の詳細を開く`}
                   >
@@ -76,8 +78,9 @@ export function MonthView({
                         onClick={() => onSelectDate(key)}
                         title={e.title}
                         className={`block w-full truncate rounded border px-1 text-left text-xs ${
-                          SOURCE_COLORS[e.source] ?? 'bg-gray-100 text-gray-600'
-                        } ${SOURCE_CHIP_BORDER[e.source] ?? 'border-gray-200'}`}
+                          SOURCE_COLORS[e.source] ??
+                          'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'
+                        } ${SOURCE_CHIP_BORDER[e.source] ?? 'border-gray-200 dark:border-gray-700'}`}
                         data-testid={`calendar-event-${e.key}`}
                       >
                         {e.title}
@@ -88,7 +91,7 @@ export function MonthView({
                         type="button"
                         onClick={() => onSelectDate(key)}
                         aria-label={`${key}の残り${hidden}件を開く`}
-                        className="block w-full truncate text-left text-xs text-gray-400 hover:text-gray-600"
+                        className="block w-full truncate text-left text-xs text-gray-400 dark:text-gray-500 hover:text-gray-600"
                       >
                         +{hidden}件
                       </button>

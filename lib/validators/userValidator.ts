@@ -1,4 +1,6 @@
 import { ValidationError } from '@/lib/errors';
+import type { Locale, Theme } from '@/lib/types';
+import { VALID_LOCALES, VALID_THEMES } from '@/lib/i18n/constants';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const MAX_NAME_LENGTH = 100;
@@ -20,6 +22,8 @@ export interface ProfileUpdateInput {
   name?: string;
   email?: string;
   avatarUrl?: string;
+  theme?: Theme;
+  locale?: Locale;
 }
 
 export function validateRegister(input: RegisterInput): void {
@@ -41,7 +45,9 @@ export function validateProfileUpdate(input: ProfileUpdateInput): void {
   if (
     input.name === undefined &&
     input.email === undefined &&
-    input.avatarUrl === undefined
+    input.avatarUrl === undefined &&
+    input.theme === undefined &&
+    input.locale === undefined
   ) {
     throw new ValidationError('更新対象のフィールドを指定してください');
   }
@@ -55,6 +61,12 @@ export function validateProfileUpdate(input: ProfileUpdateInput): void {
       `アイコン画像URLは${MAX_AVATAR_URL_LENGTH}文字以内で入力してください`,
       'avatarUrl'
     );
+  }
+  if (input.theme !== undefined && !VALID_THEMES.includes(input.theme)) {
+    throw new ValidationError('無効なテーマです', 'theme');
+  }
+  if (input.locale !== undefined && !VALID_LOCALES.includes(input.locale)) {
+    throw new ValidationError('無効な言語です', 'locale');
   }
 }
 

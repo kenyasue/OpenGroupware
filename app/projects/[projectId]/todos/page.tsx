@@ -34,7 +34,7 @@ export default async function TodosPage({
   const members = projectService.getMembers(user.id, project.id);
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <Header user={toPublicUser(user)} />
       <ProjectNav projectId={project.id} active="todos" />
       <main className="space-y-4 p-6">

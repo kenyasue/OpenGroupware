@@ -12,12 +12,16 @@ export function DashboardWidget({
   empty?: string;
 }) {
   return (
-    <section className="rounded-lg border bg-white p-4 shadow-sm">
-      <h2 className="mb-3 text-sm font-semibold text-gray-700">{title}</h2>
+    <section className="rounded-lg border bg-white dark:bg-gray-800 p-4 shadow-sm">
+      <h2 className="mb-3 text-sm font-semibold text-gray-700 dark:text-gray-200">
+        {title}
+      </h2>
       {children ? (
         <div className="space-y-2">{children}</div>
       ) : (
-        <p className="text-sm text-gray-400">{empty ?? 'データがありません'}</p>
+        <p className="text-sm text-gray-400 dark:text-gray-500">
+          {empty ?? 'データがありません'}
+        </p>
       )}
     </section>
   );

@@ -23,7 +23,7 @@ export function MarkReadButton({ notificationId }: { notificationId: number }) {
       type="button"
       onClick={onRead}
       disabled={busy}
-      className="text-xs text-gray-500 hover:underline disabled:opacity-50"
+      className="text-xs text-gray-500 dark:text-gray-400 hover:underline disabled:opacity-50"
     >
       {busy ? '処理中...' : '既読にする'}
     </button>

@@ -52,7 +52,7 @@ export default async function ThreadDetailPage({
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <Header user={toPublicUser(user)} />
       <ProjectNav projectId={Number(projectId)} active="board" />
       <main className="mx-auto max-w-3xl space-y-6 p-6">
@@ -62,11 +62,11 @@ export default async function ThreadDetailPage({
         >
           ← 掲示板一覧へ
         </a>
-        <div className="rounded-lg border bg-white p-6 shadow-sm">
+        <div className="rounded-lg border bg-white dark:bg-gray-800 p-6 shadow-sm">
           <div className="flex items-center justify-between">
             <h1 className="text-2xl font-bold">{thread.title}</h1>
             {thread.category && (
-              <span className="rounded bg-gray-100 px-2 py-0.5 text-xs">
+              <span className="rounded bg-gray-100 dark:bg-gray-700 px-2 py-0.5 text-xs">
                 {thread.category}
               </span>
             )}
@@ -76,13 +76,13 @@ export default async function ThreadDetailPage({
           </div>
           {attachments.thread.length > 0 && (
             <div className="mt-4">
-              <p className="mb-1 text-xs font-medium text-gray-500">
+              <p className="mb-1 text-xs font-medium text-gray-500 dark:text-gray-400">
                 添付ファイル
               </p>
               <AttachmentList attachments={attachments.thread} />
             </div>
           )}
-          <p className="mt-4 text-xs text-gray-400">
+          <p className="mt-4 text-xs text-gray-400 dark:text-gray-500">
             投稿: {thread.createdAt} / 更新: {thread.updatedAt}
           </p>
         </div>
@@ -92,7 +92,7 @@ export default async function ThreadDetailPage({
           {comments.items.map((comment) => (
             <div
               key={comment.id}
-              className="rounded-lg border bg-white p-4 shadow-sm"
+              className="rounded-lg border bg-white dark:bg-gray-800 p-4 shadow-sm"
             >
               <MarkdownBody bodyMd={comment.bodyMd} />
               {commentAttachments.has(comment.id) &&
@@ -103,7 +103,9 @@ export default async function ThreadDetailPage({
                     />
                   </div>
                 )}
-              <p className="mt-2 text-xs text-gray-400">{comment.createdAt}</p>
+              <p className="mt-2 text-xs text-gray-400 dark:text-gray-500">
+                {comment.createdAt}
+              </p>
             </div>
           ))}
           <CommentForm projectId={Number(projectId)} threadId={thread.id} />

@@ -2,9 +2,11 @@
 
 import { useState, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
+import { useI18n } from '@/lib/i18n/I18nProvider';
 
 export function CreateProjectForm() {
   const router = useRouter();
+  const { t } = useI18n();
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -30,25 +32,25 @@ export function CreateProjectForm() {
     const body = (await res.json().catch(() => null)) as {
       error?: { message?: string };
     } | null;
-    setError(body?.error?.message ?? 'プロジェクトの作成に失敗しました');
+    setError(body?.error?.message ?? t('project.createFailed'));
     setLoading(false);
   }
 
   return (
     <form
       onSubmit={onSubmit}
-      className="flex flex-col gap-2 rounded-lg border bg-white p-4 shadow-sm sm:flex-row sm:items-end"
+      className="flex flex-col gap-2 rounded-lg border bg-white p-4 shadow-sm sm:flex-row sm:items-end dark:border-gray-700 dark:bg-gray-800"
     >
       <div className="flex-1">
         <label htmlFor="project-name" className="block text-sm font-medium">
-          プロジェクト名
+          {t('auth.projectName')}
         </label>
         <input
           id="project-name"
           type="text"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          className="mt-1 w-full rounded border px-3 py-2"
+          className="mt-1 w-full rounded border px-3 py-2 dark:border-gray-600 dark:bg-gray-700"
           required
           maxLength={200}
         />
@@ -58,14 +60,14 @@ export function CreateProjectForm() {
           htmlFor="project-description"
           className="block text-sm font-medium"
         >
-          説明（任意）
+          {t('project.description')}
         </label>
         <input
           id="project-description"
           type="text"
           value={description}
           onChange={(e) => setDescription(e.target.value)}
-          className="mt-1 w-full rounded border px-3 py-2"
+          className="mt-1 w-full rounded border px-3 py-2 dark:border-gray-600 dark:bg-gray-700"
         />
       </div>
       <button
@@ -73,7 +75,7 @@ export function CreateProjectForm() {
         disabled={loading}
         className="rounded bg-blue-600 px-4 py-2 font-medium text-white hover:bg-blue-700 disabled:opacity-50"
       >
-        {loading ? '作成中...' : '新規プロジェクト'}
+        {loading ? t('project.creating') : t('auth.newProject')}
       </button>
       {error && (
         <p className="text-sm text-red-600 sm:full" role="alert">

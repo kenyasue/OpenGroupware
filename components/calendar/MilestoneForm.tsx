@@ -35,7 +35,7 @@ export function MilestoneForm({ projectId }: { projectId: number }) {
   return (
     <form
       onSubmit={onSubmit}
-      className="flex flex-col gap-2 rounded-lg border bg-white p-4 shadow-sm sm:flex-row sm:items-end"
+      className="flex flex-col gap-2 rounded-lg border bg-white dark:bg-gray-800 p-4 shadow-sm sm:flex-row sm:items-end"
     >
       <div className="flex-1">
         <label className="block text-sm font-medium">マイルストーン名</label>

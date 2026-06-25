@@ -123,5 +123,29 @@ describe('UserRepository', () => {
       // UPDATE affects 0 rows; findById returns null
       expect(result).toBeNull();
     });
+
+    it('defaults theme to dark and locale to en on create', () => {
+      const created = repo.create({
+        name: 'Pref',
+        email: 'p@example.com',
+        passwordHash: 'h',
+      });
+      expect(created.theme).toBe('dark');
+      expect(created.locale).toBe('en');
+    });
+
+    it('updates theme and locale', () => {
+      const created = repo.create({
+        name: 'Pref',
+        email: 'p@example.com',
+        passwordHash: 'h',
+      });
+      const updated = repo.update(created.id, {
+        theme: 'light',
+        locale: 'ja',
+      });
+      expect(updated?.theme).toBe('light');
+      expect(updated?.locale).toBe('ja');
+    });
   });
 });

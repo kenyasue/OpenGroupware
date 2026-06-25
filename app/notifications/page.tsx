@@ -16,7 +16,7 @@ export default async function NotificationsPage() {
   const { items } = service.listUnread(user.id, 1);
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <Header user={toPublicUser(user)} />
       <main className="mx-auto max-w-2xl space-y-6 p-6">
         <h1 className="text-2xl font-bold">通知</h1>

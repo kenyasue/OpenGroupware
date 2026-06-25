@@ -51,7 +51,7 @@ export default async function SearchPage({
     : [];
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <Header user={toPublicUser(user)} />
       <ProjectNav projectId={project.id} active="search" />
       <main className="mx-auto max-w-3xl space-y-6 p-6">
@@ -63,7 +63,9 @@ export default async function SearchPage({
         />
         <section className="space-y-2">
           {q && results.length === 0 && (
-            <p className="text-sm text-gray-400">該当する結果はありません。</p>
+            <p className="text-sm text-gray-400 dark:text-gray-500">
+              該当する結果はありません。
+            </p>
           )}
           {results.map((r) => {
             const href =
@@ -73,16 +75,20 @@ export default async function SearchPage({
               <a
                 key={`${r.type}-${r.id}`}
                 href={href}
-                className="block rounded border bg-white p-3 shadow-sm hover:shadow-md"
+                className="block rounded border bg-white dark:bg-gray-800 p-3 shadow-sm hover:shadow-md"
                 data-testid={`search-result-${r.type}-${r.id}`}
               >
                 <div className="flex items-center justify-between">
-                  <span className="font-medium text-gray-800">{r.title}</span>
-                  <span className="rounded bg-gray-100 px-2 py-0.5 text-xs">
+                  <span className="font-medium text-gray-800 dark:text-gray-100">
+                    {r.title}
+                  </span>
+                  <span className="rounded bg-gray-100 dark:bg-gray-700 px-2 py-0.5 text-xs">
                     {r.type}
                   </span>
                 </div>
-                <p className="mt-1 text-xs text-gray-500">{r.snippet}</p>
+                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                  {r.snippet}
+                </p>
               </a>
             );
           })}

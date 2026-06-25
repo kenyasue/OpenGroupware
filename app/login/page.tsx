@@ -2,11 +2,13 @@
 
 import { useState, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
+import { useI18n } from '@/lib/i18n/I18nProvider';
 
 type Mode = 'login' | 'register';
 
 export default function LoginPage() {
   const router = useRouter();
+  const { t } = useI18n();
   const [mode, setMode] = useState<Mode>('login');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -38,22 +40,22 @@ export default function LoginPage() {
     const data = (await res.json().catch(() => null)) as {
       error?: { message?: string };
     } | null;
-    setError(data?.error?.message ?? '処理に失敗しました');
+    setError(data?.error?.message ?? t('auth.failed'));
     setLoading(false);
   }
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center bg-gray-50 p-8">
-      <div className="w-full max-w-sm rounded-lg border bg-white p-8 shadow-sm">
+    <main className="flex min-h-screen flex-col items-center justify-center bg-gray-50 p-8 dark:bg-gray-900">
+      <div className="w-full max-w-sm rounded-lg border bg-white p-8 shadow-sm dark:border-gray-700 dark:bg-gray-800">
         <h1 className="text-2xl font-bold">
-          {mode === 'login' ? 'ログイン' : '新規登録'}
+          {mode === 'login' ? t('auth.login') : t('auth.register')}
         </h1>
 
         <form className="mt-6 space-y-4" onSubmit={onSubmit}>
           {mode === 'register' && (
             <div>
               <label htmlFor="name" className="block text-sm font-medium">
-                表示名
+                {t('auth.displayName')}
               </label>
               <input
                 id="name"
@@ -61,14 +63,14 @@ export default function LoginPage() {
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="mt-1 w-full rounded border px-3 py-2"
+                className="mt-1 w-full rounded border px-3 py-2 dark:border-gray-600 dark:bg-gray-700"
                 required
               />
             </div>
           )}
           <div>
             <label htmlFor="email" className="block text-sm font-medium">
-              メールアドレス
+              {t('auth.email')}
             </label>
             <input
               id="email"
@@ -77,13 +79,13 @@ export default function LoginPage() {
               autoComplete="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="mt-1 w-full rounded border px-3 py-2"
+              className="mt-1 w-full rounded border px-3 py-2 dark:border-gray-600 dark:bg-gray-700"
               required
             />
           </div>
           <div>
             <label htmlFor="password" className="block text-sm font-medium">
-              パスワード
+              {t('auth.password')}
             </label>
             <input
               id="password"
@@ -94,7 +96,7 @@ export default function LoginPage() {
               }
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="mt-1 w-full rounded border px-3 py-2"
+              className="mt-1 w-full rounded border px-3 py-2 dark:border-gray-600 dark:bg-gray-700"
               required
               minLength={8}
             />
@@ -111,19 +113,23 @@ export default function LoginPage() {
             disabled={loading}
             className="w-full rounded bg-blue-600 px-4 py-2 font-medium text-white hover:bg-blue-700 disabled:opacity-50"
           >
-            {loading ? '処理中...' : mode === 'login' ? 'ログイン' : '登録する'}
+            {loading
+              ? t('auth.processing')
+              : mode === 'login'
+                ? t('auth.loginButton')
+                : t('auth.registerButton')}
           </button>
         </form>
 
         <button
           type="button"
-          className="mt-4 w-full text-center text-sm text-blue-600 hover:underline"
+          className="mt-4 w-full text-center text-sm text-blue-600 hover:underline dark:text-blue-400"
           onClick={() => {
             setMode(mode === 'login' ? 'register' : 'login');
             setError(null);
           }}
         >
-          {mode === 'login' ? '新規登録はこちら' : 'ログイン画面に戻る'}
+          {mode === 'login' ? t('auth.registerHere') : t('auth.backToLogin')}
         </button>
       </div>
     </main>

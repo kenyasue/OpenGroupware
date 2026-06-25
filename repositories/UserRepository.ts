@@ -1,5 +1,5 @@
 import type { SqliteDatabase } from '@/lib/db/sqlite';
-import type { User, UserRole, UserStatus } from '@/lib/types';
+import type { Locale, Theme, User, UserRole, UserStatus } from '@/lib/types';
 
 interface UserRow {
   id: number;
@@ -9,6 +9,8 @@ interface UserRow {
   avatar_url: string | null;
   role: string;
   status: string;
+  theme: string;
+  locale: string;
   created_at: string;
   updated_at: string;
 }
@@ -22,6 +24,8 @@ function mapUser(row: UserRow): User {
     avatarUrl: row.avatar_url,
     role: row.role as UserRole,
     status: row.status as UserStatus,
+    theme: row.theme as Theme,
+    locale: row.locale as Locale,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -40,6 +44,8 @@ export interface UpdateUserInput {
   avatarUrl?: string | null;
   role?: UserRole;
   status?: UserStatus;
+  theme?: Theme;
+  locale?: Locale;
 }
 
 /**
@@ -113,6 +119,14 @@ export class UserRepository {
     if (input.status !== undefined) {
       fields.push('status = @status');
       params.status = input.status;
+    }
+    if (input.theme !== undefined) {
+      fields.push('theme = @theme');
+      params.theme = input.theme;
+    }
+    if (input.locale !== undefined) {
+      fields.push('locale = @locale');
+      params.locale = input.locale;
     }
 
     this.db.execute(

@@ -80,7 +80,7 @@ export function CalendarView({
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h2
-          className="text-xl font-bold text-gray-800"
+          className="text-xl font-bold text-gray-800 dark:text-gray-100"
           data-testid="calendar-title"
         >
           {title}
@@ -95,7 +95,7 @@ export function CalendarView({
                 className={`px-3 py-1 text-sm ${
                   view === v.mode
                     ? 'bg-blue-600 text-white'
-                    : 'bg-white text-gray-600 hover:bg-gray-100'
+                    : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
                 }`}
                 data-testid={`calendar-view-${v.mode}`}
               >
@@ -107,7 +107,7 @@ export function CalendarView({
             <button
               type="button"
               onClick={goPrev}
-              className="rounded border bg-white px-2 py-1 text-sm text-gray-600 hover:bg-gray-100"
+              className="rounded border bg-white dark:bg-gray-800 px-2 py-1 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
               aria-label="前へ"
               data-testid="calendar-prev"
             >
@@ -116,7 +116,7 @@ export function CalendarView({
             <button
               type="button"
               onClick={goToday}
-              className="rounded border bg-white px-3 py-1 text-sm text-gray-600 hover:bg-gray-100"
+              className="rounded border bg-white dark:bg-gray-800 px-3 py-1 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
               data-testid="calendar-today"
             >
               今日
@@ -124,7 +124,7 @@ export function CalendarView({
             <button
               type="button"
               onClick={goNext}
-              className="rounded border bg-white px-2 py-1 text-sm text-gray-600 hover:bg-gray-100"
+              className="rounded border bg-white dark:bg-gray-800 px-2 py-1 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
               aria-label="次へ"
               data-testid="calendar-next"
             >

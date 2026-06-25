@@ -33,7 +33,7 @@ export function Uploader({ projectId }: { projectId: number }) {
   }
 
   return (
-    <div className="rounded-lg border bg-white p-4 shadow-sm">
+    <div className="rounded-lg border bg-white dark:bg-gray-800 p-4 shadow-sm">
       <label className="block text-sm font-medium">
         ファイルをアップロード
       </label>
@@ -46,7 +46,9 @@ export function Uploader({ projectId }: { projectId: number }) {
         data-testid="file-input"
       />
       {loading && (
-        <p className="mt-1 text-sm text-gray-500">アップロード中...</p>
+        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+          アップロード中...
+        </p>
       )}
       {error && (
         <p className="mt-1 text-sm text-red-600" role="alert">

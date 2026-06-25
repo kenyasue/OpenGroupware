@@ -50,9 +50,11 @@ export function NoteEditor({
   return (
     <form
       onSubmit={onSubmit}
-      className="space-y-3 rounded-lg border bg-white p-4 shadow-sm"
+      className="space-y-3 rounded-lg border bg-white dark:bg-gray-800 p-4 shadow-sm"
     >
-      <h2 className="text-sm font-semibold text-gray-700">編集</h2>
+      <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-200">
+        編集
+      </h2>
       <input
         type="text"
         value={title}

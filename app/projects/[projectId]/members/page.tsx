@@ -38,7 +38,7 @@ export default async function ProjectMembersPage({
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <Header user={toPublicUser(user)} />
       <ProjectNav projectId={project.id} active="members" />
       <main className="mx-auto max-w-3xl space-y-6 p-6">
@@ -46,7 +46,7 @@ export default async function ProjectMembersPage({
 
         {canManage && <AddMemberForm projectId={project.id} />}
 
-        <section className="rounded-lg border bg-white shadow-sm">
+        <section className="rounded-lg border bg-white dark:bg-gray-800 shadow-sm">
           <ul className="divide-y">
             {members.map((member) => (
               <li
@@ -54,18 +54,20 @@ export default async function ProjectMembersPage({
                 className="flex items-center justify-between p-4"
               >
                 <div>
-                  <p className="font-medium text-gray-800">
+                  <p className="font-medium text-gray-800 dark:text-gray-100">
                     {member.user.name}
                     {member.userId === user.id && (
-                      <span className="ml-2 text-xs text-gray-400">
+                      <span className="ml-2 text-xs text-gray-400 dark:text-gray-500">
                         (あなた)
                       </span>
                     )}
                   </p>
-                  <p className="text-sm text-gray-500">{member.user.email}</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    {member.user.email}
+                  </p>
                 </div>
                 <div className="flex items-center gap-3">
-                  <span className="text-sm text-gray-600">
+                  <span className="text-sm text-gray-600 dark:text-gray-300">
                     {ROLE_LABEL[member.role] ?? member.role}
                   </span>
                   {canManage && member.userId !== user.id && (

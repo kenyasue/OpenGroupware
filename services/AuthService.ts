@@ -92,6 +92,8 @@ export class AuthService {
       name: input.name,
       email: input.email,
       avatarUrl: input.avatarUrl,
+      theme: input.theme,
+      locale: input.locale,
     });
     if (!updated) {
       throw new NotFoundError('User', userId);

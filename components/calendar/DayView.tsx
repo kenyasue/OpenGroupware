@@ -37,14 +37,14 @@ export function DayView({
   const isToday = key === todayKey;
 
   return (
-    <div className="rounded-lg border bg-white">
+    <div className="rounded-lg border bg-white dark:bg-gray-800">
       <div className="flex items-center justify-between border-b p-3">
         <button
           type="button"
           onClick={() => onSelectDate(key)}
           className="text-left"
         >
-          <p className="text-lg font-bold text-gray-800">
+          <p className="text-lg font-bold text-gray-800 dark:text-gray-100">
             {day.getMonth() + 1}月{day.getDate()}日(
             {WEEKDAY_LABELS[day.getDay()]})
           </p>
@@ -58,10 +58,12 @@ export function DayView({
 
       {allDay.length > 0 && (
         <div
-          className="border-b bg-gray-50 p-2"
+          className="border-b bg-gray-50 dark:bg-gray-900 p-2"
           data-testid="calendar-all-day-section"
         >
-          <p className="mb-1 text-xs font-medium text-gray-500">終日</p>
+          <p className="mb-1 text-xs font-medium text-gray-500 dark:text-gray-400">
+            終日
+          </p>
           <div className="flex flex-wrap gap-1">
             {allDay.map((e) => (
               <button
@@ -70,8 +72,9 @@ export function DayView({
                 onClick={() => onSelectDate(key)}
                 title={e.title}
                 className={`max-w-full truncate rounded border px-2 py-0.5 text-xs ${
-                  SOURCE_COLORS[e.source] ?? 'bg-gray-100 text-gray-600'
-                } ${SOURCE_CHIP_BORDER[e.source] ?? 'border-gray-200'}`}
+                  SOURCE_COLORS[e.source] ??
+                  'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'
+                } ${SOURCE_CHIP_BORDER[e.source] ?? 'border-gray-200 dark:border-gray-700'}`}
                 data-testid={`calendar-event-${e.key}`}
               >
                 {e.title}
@@ -90,7 +93,7 @@ export function DayView({
               className="flex border-b last:border-b-0"
               data-testid={`calendar-hour-${String(h).padStart(2, '0')}`}
             >
-              <div className="w-16 shrink-0 border-r bg-gray-50 p-1 text-right text-xs text-gray-400">
+              <div className="w-16 shrink-0 border-r bg-gray-50 dark:bg-gray-900 p-1 text-right text-xs text-gray-400 dark:text-gray-500">
                 {String(h).padStart(2, '0')}:00
               </div>
               <div className="flex-1 p-1">
@@ -101,8 +104,9 @@ export function DayView({
                     onClick={() => onSelectDate(key)}
                     title={e.title}
                     className={`mb-1 block w-full truncate rounded border px-2 py-1 text-left text-xs ${
-                      SOURCE_COLORS[e.source] ?? 'bg-gray-100 text-gray-600'
-                    } ${SOURCE_CHIP_BORDER[e.source] ?? 'border-gray-200'}`}
+                      SOURCE_COLORS[e.source] ??
+                      'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'
+                    } ${SOURCE_CHIP_BORDER[e.source] ?? 'border-gray-200 dark:border-gray-700'}`}
                     data-testid={`calendar-event-${e.key}`}
                   >
                     <span className="font-mono text-[10px] opacity-70">
