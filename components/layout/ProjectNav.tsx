@@ -7,6 +7,7 @@ const NAV_ITEMS = [
   { href: '/files', label: 'ファイル' },
   { href: '/calendar', label: 'カレンダー' },
   { href: '/milestones', label: 'マイルストーン' },
+  { href: '/meetings', label: 'ミーティング' },
   { href: '/members', label: 'メンバー' },
   { href: '/activity', label: 'アクティビティ' },
   { href: '/settings', label: '設定' },
@@ -30,6 +31,7 @@ export function ProjectNav({
     | 'files'
     | 'calendar'
     | 'milestones'
+    | 'meetings'
     | 'members'
     | 'activity'
     | 'settings';
@@ -43,6 +45,7 @@ export function ProjectNav({
     files: active === 'files',
     calendar: active === 'calendar',
     milestones: active === 'milestones',
+    meetings: active === 'meetings',
     members: active === 'members',
     activity: active === 'activity',
     settings: active === 'settings',

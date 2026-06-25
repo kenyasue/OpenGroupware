@@ -65,6 +65,23 @@ export class CalendarRepository {
     return rows.map(mapEvent);
   }
 
+  /** 指定ユーザーが作成したイベントのうち [from,to] と時間重複するもの(スケジュール重複判定用) */
+  findByCreatorInRange(
+    userId: number,
+    from: string,
+    to: string
+  ): CalendarEvent[] {
+    const rows = this.db.query<CalendarEventRow>(
+      `SELECT * FROM calendar_events
+       WHERE created_by_id = @userId AND deleted_at IS NULL
+         AND end_at IS NOT NULL
+         AND start_at <= @to AND end_at >= @from
+       ORDER BY start_at ASC`,
+      { userId, from, to }
+    );
+    return rows.map(mapEvent);
+  }
+
   findEventById(id: number): CalendarEvent | null {
     const row = this.db.get<CalendarEventRow>(
       'SELECT * FROM calendar_events WHERE id = @id AND deleted_at IS NULL',

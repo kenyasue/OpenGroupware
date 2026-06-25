@@ -21,6 +21,8 @@ import { FileRepository } from '@/repositories/FileRepository';
 import { ScheduleService } from '@/services/ScheduleService';
 import { CalendarRepository } from '@/repositories/CalendarRepository';
 import { MilestoneRepository } from '@/repositories/MilestoneRepository';
+import { MeetingService } from '@/services/MeetingService';
+import { MeetingRepository } from '@/repositories/MeetingRepository';
 
 /**
  * Route Handler用に各Repository/Serviceを構築するファクトリ。
@@ -107,6 +109,20 @@ export function createScheduleService(): ScheduleService {
     new TodoRepository(db),
     new ProjectMemberRepository(db),
     new ActivityLogService(new ActivityLogRepository(db))
+  );
+}
+
+export function createMeetingService(): MeetingService {
+  const db = getDb();
+  return new MeetingService(
+    new MeetingRepository(db),
+    new CalendarRepository(db),
+    new TodoRepository(db),
+    new ProjectMemberRepository(db),
+    new NotificationService(new NotificationRepository(db)),
+    new ActivityLogService(new ActivityLogRepository(db)),
+    getSseHub(),
+    db
   );
 }
 
