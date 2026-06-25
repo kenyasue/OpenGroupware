@@ -1,5 +1,7 @@
 # OpenGroupware
 
+![OpenGroupware demo](docs/screenshots/demo.gif)
+
 A simple, self-contained, project-based groupware built with **Next.js 15**, **TypeScript**, and
 **SQLite**. It runs entirely on Node.js (no external database or storage) and provides boards,
 Markdown notes, realtime chat (SSE), a Kanban ToDo board, file sharing, a calendar with milestones,
