@@ -25,6 +25,7 @@ import { MeetingService } from '@/services/MeetingService';
 import { MeetingRepository } from '@/repositories/MeetingRepository';
 import { SearchService } from '@/services/SearchService';
 import { DashboardService } from '@/services/DashboardService';
+import { BackupService } from '@/services/BackupService';
 
 /**
  * Route Handler用に各Repository/Serviceを構築するファクトリ。
@@ -166,6 +167,13 @@ export function createDashboardService(): DashboardService {
     memberRepo,
     scheduleService
   );
+}
+
+export function createBackupService(): BackupService {
+  const dbPath = process.env.SQLITE_PATH ?? './data/app.db';
+  const uploadsDir = process.env.UPLOADS_PATH ?? './data/uploads';
+  const backupsDir = './backups';
+  return new BackupService(dbPath, uploadsDir, backupsDir);
 }
 
 export function createUserRepository(): UserRepository {
